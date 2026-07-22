@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: training_planner_test
+          MYSQL_USER: tp
+          MYSQL_PASSWORD: tp123
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -uroot -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint server
+        run: pnpm lint-be
+
+      - name: Lint client
+        run: pnpm lint-fe
+
+      - name: Typecheck server
+        run: pnpm typecheck-be
+
+      - name: Typecheck client
+        run: pnpm typecheck-fe
+
+      - name: Test server
+        run: pnpm test
+        env:
+          DATABASE_URL: mysql://tp:tp123@localhost:3306/training_planner_test
+          JWT_SECRET: test-secret
+          JWT_REFRESH_SECRET: test-refresh-secret

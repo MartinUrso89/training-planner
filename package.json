@@ -1,0 +1,17 @@
+{
+  "name": "training-planner",
+  "private": true,
+  "scripts": {
+    "build-fe": "pnpm --prefix client run build",
+    "lint-fe": "pnpm --prefix client run lint",
+    "dev-fe": "pnpm --prefix client run dev",
+    "typecheck-fe": "pnpm --prefix client run typecheck",
+    "build-be": "pnpm --prefix server run build",
+    "lint-be": "pnpm --prefix server run lint",
+    "dev-be": "pnpm --prefix server run dev",
+    "typecheck-be": "pnpm --prefix server run typecheck",
+    "test": "pnpm --prefix server run test",
+    "lint": "pnpm lint-be && pnpm lint-fe",
+    "typecheck": "pnpm typecheck-be && pnpm typecheck-fe"
+  }
+}
