@@ -14,13 +14,142 @@ model User {
   password      String
   createdAt     DateTime       @default(now())
   refreshTokens RefreshToken[]
+  planTemplates PlanTemplate[]
+  workouts      Workout[]      @relation("AssignedWorkouts")
+  assignedWorkouts Workout[]   @relation("AssignedByWorkouts")
 }
 
 model RefreshToken {
-  token    String   @id
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@unique([token, userId])
+}
+
+model SectionType {
+  id              String               @id
+  name            String               @unique
+  templateSections PlanTemplateSection[]
+  workoutSections  WorkoutSection[]
+}
+
+model Exercise {
+  id          String   @id @default(uuid())
+  name        String
+  muscleGroup String
+  videoUrl    String?
+  description String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  templateExercises PlanTemplateExercise[]
+  workoutExercises   WorkoutExercise[]
+}
+
+model PlanTemplate {
+  id        String                @id @default(uuid())
+  name      String
+  description String?
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id])
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+  sections  PlanTemplateSection[]
+  workouts  Workout[]
+}
+
+model PlanTemplateSection {
+  id                   String                @id @default(uuid())
+  templateId           String
+  sectionTypeId        String
+  name                 String?
+  sortOrder            Int
+  rounds               Int?
+  timeCap              Int?
+  restBetweenExercises Int?
+  restBetweenRounds    Int?
+  template             PlanTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  sectionType          SectionType           @relation(fields: [sectionTypeId], references: [id])
+  exercises            PlanTemplateExercise[]
+}
+
+model PlanTemplateExercise {
+  id                String             @id @default(uuid())
+  templateSectionId String
+  exerciseId        String
+  sortOrder         Int
+  sets              Int?
+  reps              Int?
+  durationSeconds   Int?
+  weight            Float?
+  rpe               Float?
+  restBetweenSets   Int?
+  supersetGroupId   String?
+  supersetOrder     Int?
+  notes             String?
+  section           PlanTemplateSection @relation(fields: [templateSectionId], references: [id], onDelete: Cascade)
+  exercise          Exercise            @relation(fields: [exerciseId], references: [id])
+}
+
+model Workout {
+  id           String           @id @default(uuid())
+  templateId   String?
+  template     PlanTemplate?    @relation(fields: [templateId], references: [id])
+  userId       String
+  user         User             @relation("AssignedWorkouts", fields: [userId], references: [id])
+  assignedById String
+  assignedBy   User             @relation("AssignedByWorkouts", fields: [assignedById], references: [id])
+  date         DateTime
+  completed    Boolean          @default(false)
+  completedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  sections     WorkoutSection[]
+}
+
+model WorkoutSection {
+  id                   String           @id @default(uuid())
+  workoutId            String
+  sectionTypeId        String
+  name                 String?
+  sortOrder            Int
+  rounds               Int?
+  timeCap              Int?
+  restBetweenExercises Int?
+  restBetweenRounds    Int?
+  workout              Workout          @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  sectionType          SectionType      @relation(fields: [sectionTypeId], references: [id])
+  exercises            WorkoutExercise[]
+}
+
+model WorkoutExercise {
+  id               String              @id @default(uuid())
+  workoutSectionId String
+  exerciseId       String
+  sortOrder        Int
+  plannedSets      Int?
+  plannedReps      Int?
+  plannedDuration  Int?
+  plannedWeight    Float?
+  plannedRpe       Float?
+  plannedRest      Int?
+  supersetGroupId  String?
+  supersetOrder    Int?
+  notes            String?
+  section          WorkoutSection      @relation(fields: [workoutSectionId], references: [id], onDelete: Cascade)
+  exercise         Exercise            @relation(fields: [exerciseId], references: [id])
+  logs             WorkoutExerciseLog[]
+}
+
+model WorkoutExerciseLog {
+  id                String          @id @default(uuid())
+  workoutExerciseId String
+  completed         Boolean         @default(false)
+  actualReps        Int?
+  actualWeight      Float?
+  actualRpe         Float?
+  actualDuration    Int?
+  comment           String?
+  completedAt       DateTime?
+  exercise          WorkoutExercise @relation(fields: [workoutExerciseId], references: [id], onDelete: Cascade)
 }
