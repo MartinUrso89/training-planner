@@ -36,8 +36,8 @@ export default function Sidebar() {
     <aside className="w-60 h-screen bg-[#0F172A] text-white flex flex-col shrink-0">
       {/* Avatar + nombre */}
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
-        <Avatar name={user?.name ?? '?'} size="sm" />
-        <span className="text-sm font-semibold truncate">{user?.name}</span>
+        <Avatar name={user?.nombre ?? '?'} size="sm" />
+        <span className="text-sm font-semibold truncate">{user?.nombre}</span>
       </div>
 
       <div className="h-px bg-white/10 mx-4" />

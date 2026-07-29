@@ -1,47 +1,47 @@
 import prisma from '../src/lib/prisma.js'
 import bcrypt from 'bcrypt'
 
-const sectionTypes = [
-  { id: 'warmup', name: 'Calentamiento' },
-  { id: 'normal', name: 'Normal' },
-  { id: 'circuit', name: 'Circuito' },
-  { id: 'amrap', name: 'AMRAP' },
-  { id: 'technique', name: 'Técnica' },
+const tiposSeccion = [
+  { id: 'warmup', nombre: 'Calentamiento' },
+  { id: 'normal', nombre: 'Normal' },
+  { id: 'circuit', nombre: 'Circuito' },
+  { id: 'amrap', nombre: 'AMRAP' },
+  { id: 'technique', nombre: 'Técnica' },
 ]
 
 async function main() {
-  for (const st of sectionTypes) {
-    await prisma.sectionType.upsert({
-      where: { id: st.id },
-      update: { name: st.name },
-      create: st,
+  for (const ts of tiposSeccion) {
+    await prisma.tipoSeccion.upsert({
+      where: { id: ts.id },
+      update: { nombre: ts.nombre },
+      create: ts,
     })
   }
-  console.log('✓ Section types seeded')
+  console.log('✓ Tipos de sección insertados')
 
-  const password = await bcrypt.hash('123456', 10)
+  const contrasena = await bcrypt.hash('123456', 10)
 
-  const trainer = await prisma.user.upsert({
-    where: { email: 'ursito@test.com' },
+  const trainer = await prisma.usuario.upsert({
+    where: { correo: 'ursito@test.com' },
     update: {},
     create: {
-      name: 'Ursito',
-      email: 'ursito@test.com',
-      password,
+      nombre: 'Ursito',
+      correo: 'ursito@test.com',
+      contrasena,
     },
   })
-  console.log(`✓ Trainer created: ${trainer.email} / 123456`)
+  console.log(`✓ Trainer creado: ${trainer.correo} / 123456`)
 
-  const athlete = await prisma.user.upsert({
-    where: { email: 'athlete@test.com' },
+  const athlete = await prisma.usuario.upsert({
+    where: { correo: 'athlete@test.com' },
     update: {},
     create: {
-      name: 'Atleta Test',
-      email: 'athlete@test.com',
-      password,
+      nombre: 'Atleta Test',
+      correo: 'athlete@test.com',
+      contrasena,
     },
   })
-  console.log(`✓ Athlete created: ${athlete.email} / 123456`)
+  console.log(`✓ Atleta creado: ${athlete.correo} / 123456`)
 }
 
 main()

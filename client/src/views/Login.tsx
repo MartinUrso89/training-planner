@@ -5,7 +5,7 @@ import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
 import { login } from '../services/auth'
 
 export default function Login() {
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [form, setForm] = useState({ correo: '', contrasena: '' })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
@@ -55,8 +55,8 @@ export default function Login() {
                 type="email"
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="tu@email.com"
-                value={form.email}
-                onChange={set('email')}
+                value={form.correo}
+                onChange={set('correo')}
                 required
               />
             </div>
@@ -71,8 +71,8 @@ export default function Login() {
                 type="password"
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Tu contraseña"
-                value={form.password}
-                onChange={set('password')}
+                value={form.contrasena}
+                onChange={set('contrasena')}
                 required
               />
             </div>

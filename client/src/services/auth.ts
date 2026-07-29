@@ -2,9 +2,9 @@ import api from './api'
 
 export interface AuthUser {
   id: string
-  name: string
-  email: string
-  createdAt: string
+  nombre: string
+  correo: string
+  creadoEn: string
 }
 
 export interface LoginResponse {
@@ -13,13 +13,13 @@ export interface LoginResponse {
   user: AuthUser
 }
 
-export const login = (payload: { email: string; password: string }): Promise<LoginResponse> =>
+export const login = (payload: { correo: string; contrasena: string }): Promise<LoginResponse> =>
   api.post<LoginResponse>('/auth/login', payload).then((r) => r.data)
 
 export interface RegisterInput {
-  name: string
-  email: string
-  password: string
+  nombre: string
+  correo: string
+  contrasena: string
 }
 
 export const register = (payload: RegisterInput): Promise<LoginResponse> =>

@@ -1,108 +1,84 @@
-import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import { logger } from '../../lib/logger.js'
-import { env } from '../../lib/envConfig.js'
+import bcrypt from 'bcrypt'
 import { createHttpError } from '../../lib/errors.js'
-import { findByEmail, createUser, findUserById, saveRefreshToken, findRefreshToken, deleteRefreshToken } from '../../infrastructure/database/user.database.js'
-import type { DomainUser } from '../types/user.types.js'
+import { env } from '../../lib/envConfig.js'
+import {
+  buscarPorCorreo,
+  buscarUsuarioPorId,
+  crearUsuario,
+  guardarTokenRefresco,
+  buscarTokenRefresco,
+  eliminarTokenRefresco,
+} from '../../infrastructure/database/usuario.database.js'
+import type { Usuario } from '../types/usuario.types.js'
 
-const SALT_ROUNDS = 10
-
-export interface RegisterInput {
-  name: string
-  email: string
-  password: string
+interface RegisterInput {
+  nombre: string
+  correo: string
+  contrasena: string
 }
 
-export interface LoginResponse {
+interface LoginResponse {
   accessToken: string
   refreshToken: string
-  user: DomainUser
+  user: Usuario
 }
 
-function generateTokens(userId: string): { accessToken: string; refreshToken: string } {
-  const accessToken = jwt.sign({ sub: userId }, env.JWT_SECRET, {
-    expiresIn: env.JWT_ACCESS_EXPIRY as string & jwt.SignOptions['expiresIn'],
-  })
-  const refreshToken = jwt.sign({ sub: userId }, env.JWT_REFRESH_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRY as string & jwt.SignOptions['expiresIn'],
-  })
-  return { accessToken, refreshToken }
+const generateTokens = async (userId: string): Promise<LoginResponse> => {
+  const accessToken = jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: '2h' })
+  const refreshToken = jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: '7d' })
+
+  await guardarTokenRefresco(userId, refreshToken)
+
+  const user = await buscarUsuarioPorId(userId)
+  if (!user) throw createHttpError(500, 'Error al obtener el usuario')
+
+  return { accessToken, refreshToken, user }
 }
 
 export const registerUser = async (input: RegisterInput): Promise<LoginResponse> => {
-  const { name, email, password } = input
+  if (!input.nombre?.trim()) throw createHttpError(400, 'El nombre es obligatorio')
+  if (!input.correo?.trim()) throw createHttpError(400, 'El correo es obligatorio')
+  if (!input.contrasena?.trim() || input.contrasena.length < 6) throw createHttpError(400, 'La contraseña debe tener al menos 6 caracteres')
 
-  if (!name?.trim()) throw createHttpError(400, 'El nombre es obligatorio')
-  if (!email?.trim()) throw createHttpError(400, 'El correo electrónico es obligatorio')
-  if (!password) throw createHttpError(400, 'La contraseña es obligatoria')
+  const exists = await buscarPorCorreo(input.correo)
+  if (exists) throw createHttpError(409, 'El correo ya está registrado')
 
-  const normalizedEmail = email.trim().toLowerCase()
+  const hashed = await bcrypt.hash(input.contrasena, 10)
+  const user = await crearUsuario({ nombre: input.nombre, correo: input.correo, contrasena: hashed })
 
-  const existing = await findByEmail(normalizedEmail)
-  if (existing) throw createHttpError(409, 'El correo electrónico ya está registrado')
-
-  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
-
-  const user = await createUser({ name: name.trim(), email: normalizedEmail, password: hashedPassword })
-
-  const tokens = generateTokens(user.id)
-  await saveRefreshToken(user.id, tokens.refreshToken)
-
-  logger.info({ userId: user.id, email: normalizedEmail, action: 'auth.user.registered' }, 'User registered')
-
-  return { ...tokens, user }
+  return generateTokens(user.id)
 }
 
-export const loginUser = async (input: { email: string; password: string }): Promise<LoginResponse> => {
-  const { email, password } = input
+export const loginUser = async (input: { correo: string; contrasena: string }): Promise<LoginResponse> => {
+  if (!input.correo?.trim()) throw createHttpError(400, 'El correo es obligatorio')
+  if (!input.contrasena?.trim()) throw createHttpError(400, 'La contraseña es obligatoria')
 
-  if (!email?.trim()) throw createHttpError(400, 'El correo electrónico es obligatorio')
-  if (!password) throw createHttpError(400, 'La contraseña es obligatoria')
-
-  const normalizedEmail = email.trim().toLowerCase()
-
-  const user = await findByEmail(normalizedEmail)
+  const user = await buscarPorCorreo(input.correo)
   if (!user) throw createHttpError(401, 'Credenciales inválidas')
 
-  const passwordMatch = await bcrypt.compare(password, user.password)
-  if (!passwordMatch) throw createHttpError(401, 'Credenciales inválidas')
+  const match = await bcrypt.compare(input.contrasena, user.contrasena)
+  if (!match) throw createHttpError(401, 'Credenciales inválidas')
 
-  const tokens = generateTokens(user.id)
-  await saveRefreshToken(user.id, tokens.refreshToken)
-
-  logger.info({ userId: user.id, email: normalizedEmail, action: 'auth.user.loggedIn' }, 'User logged in')
-
-  const safeUser = { id: user.id, name: user.name, email: user.email, createdAt: user.createdAt }
-  return { ...tokens, user: safeUser }
+  return generateTokens(user.id)
 }
 
 export const refreshUserTokens = async (refreshToken: string): Promise<LoginResponse> => {
-  if (!refreshToken) throw createHttpError(400, 'Refresh token requerido')
-
-  let payload: { sub: string }
   try {
-    payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as { sub: string }
-  } catch {
+    const payload = jwt.verify(refreshToken, env.JWT_SECRET) as { sub: string }
+    const stored = await buscarTokenRefresco(payload.sub, refreshToken)
+    if (!stored) throw createHttpError(401, 'Refresh token inválido')
+
+    await eliminarTokenRefresco(refreshToken)
+    return generateTokens(payload.sub)
+  } catch (err) {
+    if ((err as Error & { status?: number }).status) throw err
     throw createHttpError(401, 'Refresh token inválido o expirado')
   }
-
-  const stored = await findRefreshToken(payload.sub, refreshToken)
-  if (!stored) throw createHttpError(401, 'Refresh token no reconocido')
-
-  const user = await findUserById(payload.sub)
-  if (!user) throw createHttpError(404, 'Usuario no encontrado')
-
-  await deleteRefreshToken(refreshToken)
-
-  const tokens = generateTokens(user.id)
-  await saveRefreshToken(user.id, tokens.refreshToken)
-
-  return { ...tokens, user }
 }
 
-export const getUserById = async (id: string): Promise<DomainUser> => {
-  const user = await findUserById(id)
+export const getUserById = async (id: string): Promise<Usuario> => {
+  const user = await buscarUsuarioPorId(id)
   if (!user) throw createHttpError(404, 'Usuario no encontrado')
   return user
 }

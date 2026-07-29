@@ -1,12 +1,12 @@
 import { Router } from 'express'
-import { getSectionTypes } from '../../domain/services/sectionType.service.js'
+import { obtenerTiposSeccion } from '../../domain/services/tipoSeccion.service.js'
 
 const router = Router()
 
 router.get('/', async (_req, res, next) => {
   try {
-    const types = await getSectionTypes()
-    res.json(types)
+    const tipos = await obtenerTiposSeccion()
+    res.json(tipos)
   } catch (err) {
     next(err)
   }
