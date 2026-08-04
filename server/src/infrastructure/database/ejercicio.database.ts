@@ -8,6 +8,13 @@ export interface FiltrosEjercicio {
   patronMovimiento?: string
 }
 
+export interface ResultadoPaginado {
+  datos: Ejercicio[]
+  total: number
+  pagina: number
+  totalPaginas: number
+}
+
 const camposEjercicio = {
   id: true,
   nombre: true,
@@ -38,7 +45,7 @@ const camposSugerencia = {
   comentarioRechazo: true,
 } as const
 
-export const listarEjercicios = (filtros?: FiltrosEjercicio): Promise<Ejercicio[]> => {
+const buildWhere = (filtros?: FiltrosEjercicio): Record<string, unknown> => {
   const where: Record<string, unknown> = {}
 
   if (filtros?.buscar) where.nombre = { contains: filtros.buscar }
@@ -46,11 +53,33 @@ export const listarEjercicios = (filtros?: FiltrosEjercicio): Promise<Ejercicio[
   if (filtros?.tipoArticular) where.tipoArticular = filtros.tipoArticular
   if (filtros?.patronMovimiento) where.patronMovimiento = filtros.patronMovimiento
 
-  return prisma.ejercicio.findMany({
-    where,
-    select: camposEjercicio,
-    orderBy: { nombre: 'asc' },
-  })
+  return where
+}
+
+export const listarEjerciciosPaginado = async (
+  filtros: FiltrosEjercicio,
+  pagina: number,
+  limite: number,
+): Promise<ResultadoPaginado> => {
+  const where = buildWhere(filtros)
+
+  const [datos, total] = await Promise.all([
+    prisma.ejercicio.findMany({
+      where,
+      select: camposEjercicio,
+      orderBy: { nombre: 'asc' },
+      skip: (pagina - 1) * limite,
+      take: limite,
+    }),
+    prisma.ejercicio.count({ where }),
+  ])
+
+  return {
+    datos,
+    total,
+    pagina,
+    totalPaginas: Math.ceil(total / limite),
+  }
 }
 
 export const buscarEjercicioPorId = (id: string): Promise<Ejercicio | null> =>
@@ -95,6 +124,8 @@ export const listarGruposMusculares = (): Promise<{ musculoPrincipal: string }[]
     distinct: ['musculoPrincipal'],
     orderBy: { musculoPrincipal: 'asc' },
   })
+
+
 
 export const crearSugerenciaEjercicio = (usuarioId: string, data: CrearSugerenciaEjercicioInput): Promise<SugerenciaEjercicio> =>
   prisma.sugerenciaEjercicio.create({

@@ -16,14 +16,18 @@ router.use(jwtCheck)
 
 router.get('/', async (req, res, next) => {
   try {
-    const { buscar, musculoPrincipal, tipoArticular, patronMovimiento } = req.query
-    const ejercicios = await obtenerEjercicios({
-      buscar: buscar as string | undefined,
-      musculoPrincipal: musculoPrincipal as string | undefined,
-      tipoArticular: tipoArticular as string | undefined,
-      patronMovimiento: patronMovimiento as string | undefined,
-    })
-    res.json(ejercicios)
+    const { buscar, musculoPrincipal, tipoArticular, patronMovimiento, pagina, limite } = req.query
+    const resultado = await obtenerEjercicios(
+      {
+        buscar: buscar as string | undefined,
+        musculoPrincipal: musculoPrincipal as string | undefined,
+        tipoArticular: tipoArticular as string | undefined,
+        patronMovimiento: patronMovimiento as string | undefined,
+      },
+      Number(pagina) || 1,
+      Number(limite) || 15,
+    )
+    res.json(resultado)
   } catch (err) {
     next(err)
   }

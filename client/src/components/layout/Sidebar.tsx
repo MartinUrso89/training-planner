@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import Avatar from '../ui/Avatar'
 import {
   LayoutDashboard,
+  Dumbbell,
   Users,
   Calendar,
   NotebookText,
@@ -15,6 +16,7 @@ import {
 
 const navItems = [
   { label: 'Inicio', icon: LayoutDashboard, to: '/' },
+  { label: 'Ejercicios', icon: Dumbbell, to: '/ejercicios' },
   { label: 'Entrenados', icon: Users, to: '#' },
   { label: 'Calendario', icon: Calendar, to: '#' },
 ]

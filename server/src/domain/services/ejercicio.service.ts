@@ -1,6 +1,6 @@
 import { createHttpError } from '../../lib/errors.js'
 import {
-  listarEjercicios,
+  listarEjerciciosPaginado,
   buscarEjercicioPorId,
   crearEjercicio,
   actualizarEjercicio,
@@ -11,10 +11,17 @@ import {
 } from '../../infrastructure/database/ejercicio.database.js'
 import type { Ejercicio, SugerenciaEjercicio } from '../types/ejercicio.types.js'
 import type { CrearEjercicioInput, ActualizarEjercicioInput, CrearSugerenciaEjercicioInput } from '../types/ejercicio.types.js'
-import type { FiltrosEjercicio } from '../../infrastructure/database/ejercicio.database.js'
+import type { FiltrosEjercicio, ResultadoPaginado } from '../../infrastructure/database/ejercicio.database.js'
 
-export const obtenerEjercicios = (filtros?: FiltrosEjercicio): Promise<Ejercicio[]> =>
-  listarEjercicios(filtros)
+export const obtenerEjercicios = async (
+  filtros: FiltrosEjercicio,
+  pagina: number,
+  limite: number,
+): Promise<ResultadoPaginado> => {
+  const pag = Math.max(1, Math.floor(pagina))
+  const lim = Math.max(1, Math.min(100, Math.floor(limite)))
+  return listarEjerciciosPaginado(filtros, pag, lim)
+}
 
 export const obtenerEjercicioPorId = async (id: string): Promise<Ejercicio> => {
   const ejercicio = await buscarEjercicioPorId(id)
