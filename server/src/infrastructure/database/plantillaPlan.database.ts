@@ -10,6 +10,7 @@ const ejercicioSelect = {
   musculoSecundario: true,
   tipoArticular: true,
   patronMovimiento: true,
+  imagenUrl: true,
   videoUrl: true,
   descripcion: true,
   creadoPor: true,
@@ -43,6 +44,7 @@ const seccionPlantillaSelect = {
   tiempoLimite: true,
   descansoEntreEjercicios: true,
   descansoEntreRondas: true,
+  descansoEntreSecciones: true,
   ejercicios: { select: ejercicioPlantillaSelect, orderBy: { orden: 'asc' as const } },
 } as const
 
@@ -87,6 +89,7 @@ const mapearSeccion = (s: SeccionPayload): SeccionPlantilla => ({
   tiempoLimite: s.tiempoLimite,
   descansoEntreEjercicios: s.descansoEntreEjercicios,
   descansoEntreRondas: s.descansoEntreRondas,
+  descansoEntreSecciones: s.descansoEntreSecciones,
   ejercicios: s.ejercicios.map(mapearEjercicio),
 })
 
@@ -131,6 +134,7 @@ export const agregarSeccion = (plantillaId: string, data: CrearSeccionInput): Pr
       tiempoLimite: data.tiempoLimite ?? null,
       descansoEntreEjercicios: data.descansoEntreEjercicios ?? null,
       descansoEntreRondas: data.descansoEntreRondas ?? null,
+      descansoEntreSecciones: data.descansoEntreSecciones ?? null,
     },
     select: seccionPlantillaSelect,
   }).then(mapearSeccion)

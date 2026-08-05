@@ -1,5 +1,5 @@
 import api from './api'
-import type { AuthUser } from './auth'
+import { env } from '../lib/envConfig'
 
 export interface Ejercicio {
   id: string
@@ -8,10 +8,28 @@ export interface Ejercicio {
   musculoSecundario: string | null
   tipoArticular: string
   patronMovimiento: string
+  imagenUrl: string | null
   videoUrl: string | null
   descripcion: string | null
   creadoPor: string
   creadoEn: string
+}
+
+export const urlImagenEjercicio = (imagenUrl: string | null): string | null =>
+  imagenUrl ? `${env.VITE_API_URL}${imagenUrl}` : null
+
+export const obtenerUrlIncrustable = (videoUrl: string | null): string | null => {
+  if (!videoUrl) return null
+  const url = videoUrl.trim()
+  if (!url) return null
+
+  const yaIncrustado = url.match(/^https?:\/\/(www\.)?(youtube-nocookie\.com|youtube\.com)\/embed\/([\w-]+)/)
+  if (yaIncrustado) return `https://www.youtube-nocookie.com/embed/${yaIncrustado[3]}`
+
+  const extractor = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/)|youtu\.be\/)([\w-]+)/)
+  if (extractor) return `https://www.youtube-nocookie.com/embed/${extractor[1]}`
+
+  return null
 }
 
 export interface ResultadoPaginado {

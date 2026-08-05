@@ -2,15 +2,22 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import type { FormEvent, ChangeEvent } from 'react'
 import { User, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
-import { register } from '../services/auth'
+import { register as registerRequest } from '../services/auth'
+import { useAuth } from '../context/AuthContext'
 
 export default function Register() {
-  const [form, setForm] = useState({ nombre: '', correo: '', contrasena: '' })
+  const [form, setForm] = useState<{
+    nombre: string
+    correo: string
+    contrasena: string
+    rol: 'ENTRENADOR' | 'ATLETA'
+  }>({ nombre: '', correo: '', contrasena: '', rol: 'ENTRENADOR' })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
+  const { login } = useAuth()
 
-  const set = (field: keyof typeof form) => (e: ChangeEvent<HTMLInputElement>) => {
+  const set = (field: keyof typeof form) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [field]: e.target.value })
     if (error) setError('')
   }
@@ -20,10 +27,8 @@ export default function Register() {
     setError('')
     setIsSubmitting(true)
     try {
-      const data = await register(form)
-      localStorage.setItem('accessToken', data.accessToken)
-      localStorage.setItem('refreshToken', data.refreshToken)
-      localStorage.setItem('user', JSON.stringify(data.user))
+      const data = await registerRequest(form)
+      login(data.accessToken, data.refreshToken, data.user)
       navigate('/')
     } catch (err) {
       const axiosErr = err as { response?: { data?: { error?: string } } }
@@ -93,6 +98,19 @@ export default function Register() {
                 minLength={6}
               />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="rol" className="block text-sm font-medium text-gray-700 mb-1">Soy</label>
+            <select
+              id="rol"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={form.rol}
+              onChange={set('rol')}
+            >
+              <option value="ENTRENADOR">Entrenador</option>
+              <option value="ATLETA">Atleta</option>
+            </select>
           </div>
 
           <button

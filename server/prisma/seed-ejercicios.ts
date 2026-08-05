@@ -1,6 +1,7 @@
 import prisma from '../src/lib/prisma.js'
 
 const videoUrl = 'https://www.youtube.com/watch?v=jlFl7WJ1TzI'
+const imagenUrl = '/static/imagenes/ejercicios/ejercicio-placeholder.svg'
 
 const ejercicios = [
   { nombre: 'Press banca', musculoPrincipal: 'Pectoral', musculoSecundario: 'Tríceps', tipoArticular: 'Poliarticular' as const, patronMovimiento: 'Empuje' as const, descripcion: 'Ejercicio básico de empuje horizontal para el desarrollo del pecho.' },
@@ -45,6 +46,7 @@ async function main() {
         musculoSecundario: ej.musculoSecundario,
         tipoArticular: ej.tipoArticular,
         patronMovimiento: ej.patronMovimiento,
+        imagenUrl,
         videoUrl,
         descripcion: ej.descripcion,
         creadoPor: trainer.id,

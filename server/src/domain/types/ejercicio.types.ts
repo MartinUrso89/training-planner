@@ -19,6 +19,7 @@ export interface Ejercicio {
   musculoSecundario: string | null
   tipoArticular: TipoArticular
   patronMovimiento: PatronMovimiento
+  imagenUrl: string | null
   videoUrl: string | null
   descripcion: string | null
   creadoPor: string
@@ -31,6 +32,7 @@ export interface CrearEjercicioInput {
   musculoSecundario?: string
   tipoArticular: TipoArticular
   patronMovimiento: PatronMovimiento
+  imagenUrl?: string
   videoUrl?: string
   descripcion?: string
 }
@@ -41,6 +43,7 @@ export interface ActualizarEjercicioInput {
   musculoSecundario?: string | null
   tipoArticular?: TipoArticular
   patronMovimiento?: PatronMovimiento
+  imagenUrl?: string | null
   videoUrl?: string
   descripcion?: string
 }
@@ -52,6 +55,7 @@ export interface SugerenciaEjercicio {
   musculoSecundario: string | null
   tipoArticular: TipoArticular
   patronMovimiento: PatronMovimiento
+  imagenUrl: string | null
   videoUrl: string | null
   descripcion: string | null
   sugeridoPor: string
@@ -68,6 +72,7 @@ export interface CrearSugerenciaEjercicioInput {
   musculoSecundario?: string
   tipoArticular: TipoArticular
   patronMovimiento: PatronMovimiento
+  imagenUrl?: string
   videoUrl?: string
   descripcion?: string
 }

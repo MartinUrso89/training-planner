@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import type { FormEvent, ChangeEvent } from 'react'
 import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
-import { login } from '../services/auth'
+import { login as loginRequest } from '../services/auth'
+import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
   const [form, setForm] = useState({ correo: '', contrasena: '' })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const set = (field: keyof typeof form) => (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [field]: e.target.value })
@@ -20,10 +22,8 @@ export default function Login() {
     setError('')
     setIsSubmitting(true)
     try {
-      const data = await login(form)
-      localStorage.setItem('accessToken', data.accessToken)
-      localStorage.setItem('refreshToken', data.refreshToken)
-      localStorage.setItem('user', JSON.stringify(data.user))
+      const data = await loginRequest(form)
+      login(data.accessToken, data.refreshToken, data.user)
       navigate('/')
     } catch (err) {
       const axiosErr = err as { response?: { data?: { error?: string } } }

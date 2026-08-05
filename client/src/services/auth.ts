@@ -4,6 +4,7 @@ export interface AuthUser {
   id: string
   nombre: string
   correo: string
+  rol: 'ENTRENADOR' | 'ATLETA'
   creadoEn: string
 }
 
@@ -20,6 +21,7 @@ export interface RegisterInput {
   nombre: string
   correo: string
   contrasena: string
+  rol: 'ENTRENADOR' | 'ATLETA'
 }
 
 export const register = (payload: RegisterInput): Promise<LoginResponse> =>

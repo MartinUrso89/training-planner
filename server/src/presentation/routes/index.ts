@@ -6,6 +6,8 @@ import ejercicioRoutes from './ejercicio.routes.js'
 import plantillaPlanRoutes from './plantillaPlan.routes.js'
 import entrenamientoRoutes from './entrenamiento.routes.js'
 import tipoSeccionRoutes from './tipoSeccion.routes.js'
+import vinculacionRoutes from './vinculacion.routes.js'
+import entrenadosRoutes from './entrenados.routes.js'
 
 export function registerRoutes(app: Express): void {
   app.get('/health', (_req, res) => res.json({ status: 'ok' }))
@@ -15,4 +17,6 @@ export function registerRoutes(app: Express): void {
   app.use('/ejercicios', jwtCheck, ejercicioRoutes)
   app.use('/plantillas-plan', jwtCheck, plantillaPlanRoutes)
   app.use('/entrenamientos', jwtCheck, entrenamientoRoutes)
+  app.use('/vinculaciones', jwtCheck, vinculacionRoutes)
+  app.use('/entrenados', jwtCheck, entrenadosRoutes)
 }

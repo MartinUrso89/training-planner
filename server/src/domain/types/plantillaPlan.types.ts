@@ -1,8 +1,20 @@
 import type { Ejercicio } from './ejercicio.types.js'
 
+export interface ConfiguracionTipoSeccion {
+  usaRondas: boolean
+  usaTiempoLimite: boolean
+  usaDescansoEntreEjercicios: boolean
+  usaDescansoEntreRondas: boolean
+  usaDescansoEntreSeries: boolean
+  usaDuracion: boolean
+  usaPeso: boolean
+  usaRpe: boolean
+}
+
 export interface TipoSeccion {
   id: string
   nombre: string
+  configuracion: ConfiguracionTipoSeccion | null
 }
 
 export interface PlantillaPlan {
@@ -25,6 +37,7 @@ export interface SeccionPlantilla {
   tiempoLimite: number | null
   descansoEntreEjercicios: number | null
   descansoEntreRondas: number | null
+  descansoEntreSecciones: number | null
   ejercicios: EjercicioPlantilla[]
 }
 
@@ -58,6 +71,7 @@ export interface CrearSeccionInput {
   tiempoLimite?: number
   descansoEntreEjercicios?: number
   descansoEntreRondas?: number
+  descansoEntreSecciones?: number
 }
 
 export interface CrearEjercicioEnSeccionInput {

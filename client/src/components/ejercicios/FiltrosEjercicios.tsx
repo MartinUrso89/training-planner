@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search } from 'lucide-react'
+import { Search, RotateCcw } from 'lucide-react'
 import { obtenerGruposMusculares } from '../../services/ejercicios'
 import type { FiltrosEjercicio } from '../../services/ejercicios'
 
@@ -13,9 +13,11 @@ const PATRONES_MOVIMIENTO = [
 interface Props {
   filtros: FiltrosEjercicio
   onChange: (filtros: FiltrosEjercicio) => void
+  onLimpiar?: () => void
+  limpiarDeshabilitado?: boolean
 }
 
-export default function FiltrosEjercicios({ filtros, onChange }: Props) {
+export default function FiltrosEjercicios({ filtros, onChange, onLimpiar, limpiarDeshabilitado }: Props) {
   const [gruposPrincipales, setGruposPrincipales] = useState<string[]>([])
 
   useEffect(() => {
@@ -27,8 +29,8 @@ export default function FiltrosEjercicios({ filtros, onChange }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
+      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -73,6 +75,16 @@ export default function FiltrosEjercicios({ filtros, onChange }: Props) {
           ))}
         </select>
       </div>
+
+      {onLimpiar && (
+        <button
+          onClick={onLimpiar}
+          disabled={limpiarDeshabilitado}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg transition-colors hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        >
+          <RotateCcw className="w-3.5 h-3.5" /> Limpiar
+        </button>
+      )}
     </div>
   )
 }

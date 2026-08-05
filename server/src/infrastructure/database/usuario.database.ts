@@ -5,6 +5,7 @@ const camposPublicos = {
   id: true,
   nombre: true,
   correo: true,
+  rol: true,
   creadoEn: true,
 } as const
 

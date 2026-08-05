@@ -22,6 +22,9 @@ export interface SeccionEntrenamiento {
   tiempoLimite: number | null
   descansoEntreEjercicios: number | null
   descansoEntreRondas: number | null
+  descansoEntreSecciones: number | null
+  rondasCompletadas: number | null
+  tiempoTotalReal: number | null
   ejercicios: EjercicioEntrenamiento[]
 }
 

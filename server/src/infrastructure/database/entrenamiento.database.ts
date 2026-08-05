@@ -21,6 +21,7 @@ const ejercicioSelect = {
   musculoSecundario: true,
   tipoArticular: true,
   patronMovimiento: true,
+  imagenUrl: true,
   videoUrl: true,
   descripcion: true,
   creadoPor: true,
@@ -55,6 +56,9 @@ const seccionEntrenamientoSelect = {
   tiempoLimite: true,
   descansoEntreEjercicios: true,
   descansoEntreRondas: true,
+  descansoEntreSecciones: true,
+  rondasCompletadas: true,
+  tiempoTotalReal: true,
   ejercicios: { select: ejercicioEntrenamientoSelect, orderBy: { orden: 'asc' as const } },
 } as const
 
@@ -115,6 +119,9 @@ const mapearSeccion = (s: SeccionPayload): SeccionEntrenamiento => ({
   tiempoLimite: s.tiempoLimite,
   descansoEntreEjercicios: s.descansoEntreEjercicios,
   descansoEntreRondas: s.descansoEntreRondas,
+  descansoEntreSecciones: s.descansoEntreSecciones,
+  rondasCompletadas: s.rondasCompletadas,
+  tiempoTotalReal: s.tiempoTotalReal,
   ejercicios: s.ejercicios.map(mapearEjercicio),
 })
 
@@ -174,6 +181,7 @@ export const asignarEntrenamiento = async (
           tiempoLimite: s.tiempoLimite,
           descansoEntreEjercicios: s.descansoEntreEjercicios,
           descansoEntreRondas: s.descansoEntreRondas,
+          descansoEntreSecciones: s.descansoEntreSecciones,
           ejercicios: {
             create: s.ejercicios.map((e) => ({
               ejercicioId: e.ejercicioId,
@@ -198,11 +206,12 @@ export const asignarEntrenamiento = async (
   return mapearEntrenamiento(entrenamiento)
 }
 
-export const completarEntrenamiento = (id: string): Promise<void> =>
+export const completarEntrenamiento = (id: string): Promise<Entrenamiento> =>
   prisma.entrenamiento.update({
     where: { id },
     data: { completado: true, completadoEn: new Date() },
-  }).then(() => undefined)
+    select: entrenamientoSelect,
+  }).then(mapearEntrenamiento)
 
 export const crearRegistroEjercicio = (
   ejercicioEntrenamientoId: string,

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+import { randomUUID } from 'node:crypto'
 import { createHttpError } from '../../lib/errors.js'
 import { env } from '../../lib/envConfig.js'
 import {
@@ -11,11 +12,13 @@ import {
   eliminarTokenRefresco,
 } from '../../infrastructure/database/usuario.database.js'
 import type { Usuario } from '../types/usuario.types.js'
+import type { RolUsuario } from '../types/vinculacion.types.js'
 
 interface RegisterInput {
   nombre: string
   correo: string
   contrasena: string
+  rol?: RolUsuario
 }
 
 interface LoginResponse {
@@ -26,7 +29,7 @@ interface LoginResponse {
 
 const generateTokens = async (userId: string): Promise<LoginResponse> => {
   const accessToken = jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: '2h' })
-  const refreshToken = jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: '7d' })
+  const refreshToken = jwt.sign({ sub: userId }, env.JWT_SECRET, { expiresIn: '7d', jwtid: randomUUID() })
 
   await guardarTokenRefresco(userId, refreshToken)
 
@@ -40,12 +43,13 @@ export const registerUser = async (input: RegisterInput): Promise<LoginResponse>
   if (!input.nombre?.trim()) throw createHttpError(400, 'El nombre es obligatorio')
   if (!input.correo?.trim()) throw createHttpError(400, 'El correo es obligatorio')
   if (!input.contrasena?.trim() || input.contrasena.length < 6) throw createHttpError(400, 'La contraseña debe tener al menos 6 caracteres')
+  if (input.rol && input.rol !== 'ENTRENADOR' && input.rol !== 'ATLETA') throw createHttpError(400, 'Rol inválido')
 
   const exists = await buscarPorCorreo(input.correo)
   if (exists) throw createHttpError(409, 'El correo ya está registrado')
 
   const hashed = await bcrypt.hash(input.contrasena, 10)
-  const user = await crearUsuario({ nombre: input.nombre, correo: input.correo, contrasena: hashed })
+  const user = await crearUsuario({ nombre: input.nombre, correo: input.correo, contrasena: hashed, rol: input.rol ?? 'ATLETA' })
 
   return generateTokens(user.id)
 }

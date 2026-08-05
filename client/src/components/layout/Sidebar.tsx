@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../context/AuthContext'
 import Avatar from '../ui/Avatar'
 import {
   LayoutDashboard,
@@ -17,7 +17,7 @@ import {
 const navItems = [
   { label: 'Inicio', icon: LayoutDashboard, to: '/' },
   { label: 'Ejercicios', icon: Dumbbell, to: '/ejercicios' },
-  { label: 'Entrenados', icon: Users, to: '#' },
+  { label: 'Entrenados', icon: Users, to: '/entrenados' },
   { label: 'Calendario', icon: Calendar, to: '#' },
 ]
 

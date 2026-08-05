@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Lightbulb, RotateCcw } from 'lucide-react'
+import { Lightbulb } from 'lucide-react'
 import { obtenerEjercicios } from '../services/ejercicios'
+import type { Ejercicio, FiltrosEjercicio, ResultadoPaginado } from '../services/ejercicios'
 import FiltrosEjercicios from '../components/ejercicios/FiltrosEjercicios'
 import TablaEjercicios from '../components/ejercicios/TablaEjercicios'
 import Paginacion from '../components/ejercicios/Paginacion'
 import ModalSugerir from '../components/ejercicios/ModalSugerir'
-import type { FiltrosEjercicio, ResultadoPaginado } from '../services/ejercicios'
+import TarjetaDetalleEjercicio from '../components/ejercicios/TarjetaDetalleEjercicio'
 
 export default function Ejercicios() {
   const [filtros, setFiltros] = useState<FiltrosEjercicio>({})
@@ -13,11 +14,12 @@ export default function Ejercicios() {
   const [resultado, setResultado] = useState<ResultadoPaginado | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalAbierto, setModalAbierto] = useState(false)
+  const [seleccionado, setSeleccionado] = useState<Ejercicio | null>(null)
 
   const cargar = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await obtenerEjercicios(filtros, pagina, 15)
+      const res = await obtenerEjercicios(filtros, pagina, 8)
       setResultado(res)
     } catch {
       setResultado(null)
@@ -33,11 +35,13 @@ export default function Ejercicios() {
   const handleFiltrosChange = (nuevos: FiltrosEjercicio) => {
     setFiltros(nuevos)
     setPagina(1)
+    setSeleccionado(null)
   }
 
   const limpiarFiltros = () => {
     setFiltros({})
     setPagina(1)
+    setSeleccionado(null)
   }
 
   const hayFiltros = Object.values(filtros).some((v) => v !== undefined)
@@ -58,25 +62,41 @@ export default function Ejercicios() {
         </button>
       </div>
 
-      <div className="flex items-start gap-3 mb-4">
-        <div className="flex-1">
-          <FiltrosEjercicios filtros={filtros} onChange={handleFiltrosChange} />
+      <div
+        className="grid gap-x-6 gap-y-4"
+        style={{
+          gridTemplateColumns: '1fr 20rem',
+          gridTemplateAreas: '"filtros ." "tabla detalle" "pag ."',
+        }}
+      >
+        <div style={{ gridArea: 'filtros' }}>
+          <FiltrosEjercicios
+            filtros={filtros}
+            onChange={handleFiltrosChange}
+            onLimpiar={limpiarFiltros}
+            limpiarDeshabilitado={!hayFiltros}
+          />
         </div>
-        {hayFiltros && (
-          <button onClick={limpiarFiltros}
-            className="mt-0.5 flex items-center gap-1.5 px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <RotateCcw className="w-3.5 h-3.5" /> Limpiar
-          </button>
-        )}
+
+        <div style={{ gridArea: 'tabla' }}>
+          <TablaEjercicios
+            ejercicios={resultado?.datos ?? []}
+            loading={loading}
+            seleccionadoId={seleccionado?.id ?? null}
+            onSeleccionar={setSeleccionado}
+          />
+        </div>
+
+        <div style={{ gridArea: 'detalle' }}>
+          <TarjetaDetalleEjercicio ejercicio={seleccionado} onCerrar={() => setSeleccionado(null)} />
+        </div>
+
+        <div style={{ gridArea: 'pag' }}>
+          {resultado && (
+            <Paginacion pagina={resultado.pagina} totalPaginas={resultado.totalPaginas} onChange={setPagina} />
+          )}
+        </div>
       </div>
-
-      <TablaEjercicios ejercicios={resultado?.datos ?? []} loading={loading} />
-
-      {resultado && (
-        <div className="mt-6">
-          <Paginacion pagina={resultado.pagina} totalPaginas={resultado.totalPaginas} onChange={setPagina} />
-        </div>
-      )}
 
       <ModalSugerir abierto={modalAbierto} onCerrar={() => { setModalAbierto(false); cargar() }} />
     </div>

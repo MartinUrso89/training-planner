@@ -29,20 +29,43 @@ enum EstadoSugerencia {
   Rechazado
 }
 
+enum RolUsuario {
+  ENTRENADOR
+  ATLETA
+}
+
+enum EstadoVinculacion {
+  Pendiente
+  Activo
+  Inactivo
+}
+
+enum ObjetivoPrincipal {
+  Fuerza
+  Hipertrofia
+  PerdidaDePeso
+  Tonificacion
+  Rendimiento
+}
+
 model Usuario {
-  id                    String               @id @default(uuid())
-  nombre                String
-  correo                String               @unique
-  contrasena            String
-  creadoEn              DateTime             @default(now())
-  tokensRefresco        TokenRefresco[]
-  plantillasPlan        PlantillaPlan[]
-  entrenamientos        Entrenamiento[]      @relation("EntrenamientosAsignados")
-  entrenamientosCreados Entrenamiento[]      @relation("EntrenamientosCreadosPor")
+  id                         String               @id @default(uuid())
+  nombre                     String
+  correo                     String               @unique
+  contrasena                 String
+  rol                        RolUsuario           @default(ATLETA)
+  creadoEn                   DateTime             @default(now())
+  tokensRefresco             TokenRefresco[]
+  plantillasPlan             PlantillaPlan[]
+  entrenamientos             Entrenamiento[]      @relation("EntrenamientosAsignados")
+  entrenamientosCreados      Entrenamiento[]      @relation("EntrenamientosCreadosPor")
+  vinculacionesComoEntrenador Vinculacion[]       @relation("VinculacionesComoEntrenador")
+  vinculacionesComoAtleta    Vinculacion[]        @relation("VinculacionesComoAtleta")
+  perfilAtleta               PerfilAtleta?
 }
 
 model TokenRefresco {
-  token     String   @id
+  token     String   @id @db.VarChar(512)
   usuarioId String
   usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   creadoEn  DateTime @default(now())
@@ -53,6 +76,7 @@ model TokenRefresco {
 model TipoSeccion {
   id                        String                   @id
   nombre                    String                   @unique
+  configuracion             Json?
   seccionesPlantilla        SeccionPlantilla[]
   seccionesEntrenamiento    SeccionEntrenamiento[]
 }
@@ -64,6 +88,7 @@ model Ejercicio {
   musculoSecundario       String?
   tipoArticular           TipoArticular
   patronMovimiento        PatronMovimiento
+  imagenUrl               String?
   videoUrl                String?
   descripcion             String?
   creadoPor               String
@@ -94,6 +119,7 @@ model SeccionPlantilla {
   tiempoLimite            Int?
   descansoEntreEjercicios Int?
   descansoEntreRondas     Int?
+  descansoEntreSecciones  Int?
   plantilla               PlantillaPlan         @relation(fields: [plantillaId], references: [id], onDelete: Cascade)
   tipoSeccion             TipoSeccion           @relation(fields: [tipoSeccionId], references: [id])
   ejercicios              EjercicioPlantilla[]
@@ -142,6 +168,9 @@ model SeccionEntrenamiento {
   tiempoLimite            Int?
   descansoEntreEjercicios Int?
   descansoEntreRondas     Int?
+  descansoEntreSecciones  Int?
+  rondasCompletadas       Int?
+  tiempoTotalReal         Int?
   entrenamiento           Entrenamiento         @relation(fields: [entrenamientoId], references: [id], onDelete: Cascade)
   tipoSeccion             TipoSeccion           @relation(fields: [tipoSeccionId], references: [id])
   ejercicios              EjercicioEntrenamiento[]
@@ -186,6 +215,7 @@ model SugerenciaEjercicio {
   musculoSecundario String?
   tipoArticular     TipoArticular
   patronMovimiento  PatronMovimiento
+  imagenUrl         String?
   videoUrl          String?
   descripcion       String?
   sugeridoPor       String
@@ -194,4 +224,29 @@ model SugerenciaEjercicio {
   revisadoPor       String?
   revisadoEn        DateTime?
   comentarioRechazo String?
+}
+
+model Vinculacion {
+  id            String              @id @default(uuid())
+  entrenadorId  String
+  atletaId      String
+  estado        EstadoVinculacion   @default(Pendiente)
+  creadoEn      DateTime            @default(now())
+  aceptadoEn    DateTime?
+  actualizadoEn DateTime            @updatedAt
+  entrenador    Usuario             @relation("VinculacionesComoEntrenador", fields: [entrenadorId], references: [id], onDelete: Cascade)
+  atleta        Usuario             @relation("VinculacionesComoAtleta", fields: [atletaId], references: [id], onDelete: Cascade)
+
+  @@unique([entrenadorId, atletaId])
+  @@index([atletaId])
+}
+
+model PerfilAtleta {
+  id                String             @id @default(uuid())
+  atletaId          String             @unique
+  objetivoPrincipal ObjetivoPrincipal?
+  diasPorSemana     Int?
+  descripcion       String?
+  actualizadoEn     DateTime           @updatedAt
+  atleta            Usuario            @relation(fields: [atletaId], references: [id], onDelete: Cascade)
 }
