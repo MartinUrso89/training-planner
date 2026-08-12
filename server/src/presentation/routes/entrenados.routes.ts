@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { jwtCheck } from '../middleware/auth.middleware.js'
-import { obtenerEntrenados, obtenerEntrenado, obtenerEntrenamientosRealizados, obtenerRutinasPendientes, actualizarPerfilAtleta } from '../../domain/services/entrenados.service.js'
+import { obtenerEntrenados, obtenerEntrenado, obtenerEntrenamientosRealizados, obtenerRutinasPendientes, actualizarPerfilAtleta, actualizarNotasEntrenador } from '../../domain/services/entrenados.service.js'
 
 const router = Router()
 router.use(jwtCheck)
@@ -57,6 +57,15 @@ router.get('/:atletaId', async (req, res, next) => {
 router.put('/:atletaId/perfil', async (req, res, next) => {
   try {
     await actualizarPerfilAtleta(req.userId!, req.params.atletaId, req.body)
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.put('/:atletaId/notas', async (req, res, next) => {
+  try {
+    await actualizarNotasEntrenador(req.userId!, req.params.atletaId, req.body)
     res.json({ ok: true })
   } catch (err) {
     next(err)

@@ -365,3 +365,100 @@ describe('GET /entrenados/:atletaId/rutinas-pendientes', () => {
     expect(res.status).toBe(404)
   })
 })
+
+describe('PUT /entrenados/:atletaId/notas', () => {
+  it('el entrenador vinculado guarda notas y el perfil las devuelve', async () => {
+    const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(trainer, athlete)
+
+    const res = await request(app)
+      .put(`/entrenados/${athlete.userId}/notas`)
+      .set(autenticar(trainer))
+      .send({ notas: 'Busca ganar fuerza en sentadilla.' })
+    expect(res.status).toBe(200)
+
+    const perfil = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(trainer))
+    expect(perfil.body.notasEntrenador).toBe('Busca ganar fuerza en sentadilla.')
+  })
+
+  it('sobreescribe las notas y las vacía con un texto en blanco', async () => {
+    const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(trainer, athlete)
+    await request(app)
+      .put(`/entrenados/${athlete.userId}/notas`)
+      .set(autenticar(trainer))
+      .send({ notas: 'Primera versión' })
+
+    await request(app)
+      .put(`/entrenados/${athlete.userId}/notas`)
+      .set(autenticar(trainer))
+      .send({ notas: 'Nueva versión' })
+    const editada = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(trainer))
+    expect(editada.body.notasEntrenador).toBe('Nueva versión')
+
+    await request(app)
+      .put(`/entrenados/${athlete.userId}/notas`)
+      .set(autenticar(trainer))
+      .send({ notas: '   ' })
+    const vaciada = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(trainer))
+    expect(vaciada.body.notasEntrenador).toBeNull()
+  })
+
+  it('cada entrenador tiene sus propias notas', async () => {
+    const t1 = await registrarUsuario('T1', 't1@test.com', 'ENTRENADOR')
+    const t2 = await registrarUsuario('T2', 't2@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(t1, athlete)
+    await vincular(t2, athlete)
+
+    await request(app)
+      .put(`/entrenados/${athlete.userId}/notas`)
+      .set(autenticar(t1))
+      .send({ notas: 'Notas de T1' })
+    await request(app)
+      .put(`/entrenados/${athlete.userId}/notas`)
+      .set(autenticar(t2))
+      .send({ notas: 'Notas de T2' })
+
+    const p1 = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(t1))
+    expect(p1.body.notasEntrenador).toBe('Notas de T1')
+    const p2 = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(t2))
+    expect(p2.body.notasEntrenador).toBe('Notas de T2')
+  })
+
+  it('devuelve 400 si las notas superan los 2000 caracteres', async () => {
+    const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(trainer, athlete)
+
+    const res = await request(app)
+      .put(`/entrenados/${athlete.userId}/notas`)
+      .set(autenticar(trainer))
+      .send({ notas: 'a'.repeat(2001) })
+    expect(res.status).toBe(400)
+  })
+
+  it('devuelve 403 si el entrenador no está vinculado activamente', async () => {
+    const t1 = await registrarUsuario('T1', 't1@test.com', 'ENTRENADOR')
+    const t2 = await registrarUsuario('T2', 't2@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(t1, athlete)
+
+    const res = await request(app)
+      .put(`/entrenados/${athlete.userId}/notas`)
+      .set(autenticar(t2))
+      .send({ notas: 'Sin acceso' })
+    expect(res.status).toBe(403)
+  })
+
+  it('devuelve 403 si quien guarda no es entrenador', async () => {
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    const res = await request(app)
+      .put(`/entrenados/${athlete.userId}/notas`)
+      .set(autenticar(athlete))
+      .send({ notas: 'Hola' })
+    expect(res.status).toBe(403)
+  })
+})

@@ -23,6 +23,7 @@ export interface Entrenado {
 
 export interface PerfilEntrenado extends Entrenado {
   vinculadoDesde: string | null
+  notasEntrenador: string | null
 }
 
 export interface GuardarPerfilInput {
@@ -64,3 +65,6 @@ export const obtenerEntrenado = (atletaId: string): Promise<PerfilEntrenado> =>
 
 export const guardarPerfilAtleta = (atletaId: string, datos: GuardarPerfilInput): Promise<{ ok: boolean }> =>
   api.put(`/entrenados/${atletaId}/perfil`, datos).then((r) => r.data)
+
+export const guardarNotas = (atletaId: string, notas: string): Promise<{ ok: boolean }> =>
+  api.put(`/entrenados/${atletaId}/notas`, { notas }).then((r) => r.data)

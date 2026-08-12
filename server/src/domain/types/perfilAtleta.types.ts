@@ -28,6 +28,7 @@ export interface Entrenado {
 
 export interface PerfilEntrenado extends Entrenado {
   vinculadoDesde: Date | null
+  notasEntrenador: string | null
 }
 
 export interface ListarEntrenadosResultado {
@@ -49,4 +50,8 @@ export interface GuardarPerfilAtletaInput {
   objetivoPrincipal?: ObjetivoPrincipal
   diasPorSemana?: number
   descripcion?: string
+}
+
+export interface GuardarNotasInput {
+  notas?: string
 }

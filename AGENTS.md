@@ -69,10 +69,11 @@ Estado: ✅ hecho · 🔶 en curso · ⏳ próximo · 💭 idea
 - Vinculaciones, dashboard Entrenados, perfil de atleta (card editable).
 - Tab Entrenamientos realizados: comentario del atleta + nombre de rutina, ítem en una línea, detalle en `/entrenamientos/:id`.
 - Backend Rutinas pendientes: `GET /entrenados/:atletaId/rutinas-pendientes` (orden fecha asc, límite 15).
+- Tab Rutinas pendientes (N) en PerfilEntrenado (frontend completo).
+- Tab Notas del entrenador: textarea grande + guardar inline. Backend: `Vinculacion.notasEntrenador` (privadas por par), `PUT /entrenados/:atletaId/notas`, máx 2000 chars, 403 si no hay vinculación activa. Schema ya migrado (dev + test).
 
 ### 🔶 En curso
-- Tab Rutinas pendientes (N) en PerfilEntrenado (frontend; backend listo).
-- Tab Notas del entrenador: texto grande, guardado inline. Backend planificado: `Vinculacion.notasEntrenador`, `PUT /entrenados/:atletaId/notas`, máx 2000 chars, 403 si no hay vinculación activa. **Migración de schema pendiente de correr por el usuario** (`npx prisma db push` + `pnpm db:test:push`, server detenido).
+- (nada pendiente por ahora)
 
 ### ⏳ Próximo
 - Completar rutina desde la UI del atleta (el endpoint `POST /entrenamientos/:id/completar` ya existe).
