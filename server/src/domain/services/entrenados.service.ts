@@ -1,9 +1,9 @@
 import { createHttpError } from '../../lib/errors.js'
 import { buscarUsuarioPorId } from '../../infrastructure/database/usuario.database.js'
 import { existeVinculacionActiva } from '../../infrastructure/database/vinculacion.database.js'
-import { listarEntrenados as dbListarEntrenados, obtenerEntrenado as dbObtenerEntrenado, guardarPerfilAtleta as dbGuardarPerfilAtleta, listarEntrenamientosRealizados as dbListarEntrenamientosRealizados, listarRutinasPendientes as dbListarRutinasPendientes } from '../../infrastructure/database/entrenados.database.js'
+import { listarEntrenados as dbListarEntrenados, obtenerEntrenado as dbObtenerEntrenado, guardarPerfilAtleta as dbGuardarPerfilAtleta, guardarNotasEntrenador as dbGuardarNotasEntrenador, listarEntrenamientosRealizados as dbListarEntrenamientosRealizados, listarRutinasPendientes as dbListarRutinasPendientes } from '../../infrastructure/database/entrenados.database.js'
 import { OBJETIVOS_PRINCIPALES } from '../types/perfilAtleta.types.js'
-import type { FiltrosEntrenados, GuardarPerfilAtletaInput, ListarEntrenadosResultado, PerfilEntrenado } from '../types/perfilAtleta.types.js'
+import type { FiltrosEntrenados, GuardarNotasInput, GuardarPerfilAtletaInput, ListarEntrenadosResultado, PerfilEntrenado } from '../types/perfilAtleta.types.js'
 import type { ListarEntrenamientosRealizadosResultado, ListarRutinasPendientesResultado } from '../types/entrenamiento.types.js'
 
 const validarEntrenador = async (entrenadorId: string): Promise<void> => {
@@ -77,4 +77,24 @@ export const actualizarPerfilAtleta = async (
   if (!vinculada) throw createHttpError(403, 'El atleta no está vinculado activamente')
 
   await dbGuardarPerfilAtleta(atletaId, data)
+}
+
+const MAX_NOTAS_LONGITUD = 2000
+
+export const actualizarNotasEntrenador = async (
+  entrenadorId: string,
+  atletaId: string,
+  data: GuardarNotasInput,
+): Promise<void> => {
+  await validarEntrenador(entrenadorId)
+
+  const notas = data.notas?.trim() ?? ''
+  if (notas.length > MAX_NOTAS_LONGITUD) {
+    throw createHttpError(400, `Las notas no pueden superar los ${MAX_NOTAS_LONGITUD} caracteres`)
+  }
+
+  const vinculada = await existeVinculacionActiva(entrenadorId, atletaId)
+  if (!vinculada) throw createHttpError(403, 'El atleta no está vinculado activamente')
+
+  await dbGuardarNotasEntrenador(entrenadorId, atletaId, notas || null)
 }

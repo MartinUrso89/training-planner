@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { FormEvent } from 'react'
-import { ArrowLeft, Pencil, X, AlertCircle, CalendarCheck, ListTodo, BarChart3, UserRound, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Pencil, X, AlertCircle, CalendarCheck, ListTodo, BarChart3, UserRound, ChevronRight, StickyNote, Check } from 'lucide-react'
 import Avatar from '../components/ui/Avatar'
 import Paginacion from '../components/ejercicios/Paginacion'
-import { obtenerEntrenado, guardarPerfilAtleta, OBJETIVO_ETIQUETAS } from '../services/entrenados'
+import { obtenerEntrenado, guardarPerfilAtleta, guardarNotas, OBJETIVO_ETIQUETAS } from '../services/entrenados'
 import { obtenerEntrenamientosRealizados, obtenerRutinasPendientes } from '../services/entrenamientos'
 import type { PerfilEntrenado, ObjetivoPrincipal } from '../services/entrenados'
 import type { EntrenamientoRealizado, RutinaPendiente } from '../services/entrenamientos'
@@ -20,6 +20,7 @@ const LIMITE_RUTINAS = 15
 const tabs = [
   { id: 'realizados', icon: CalendarCheck, label: 'Entrenamientos realizados' },
   { id: 'pendientes', icon: ListTodo, label: 'Rutinas pendientes' },
+  { id: 'notas', icon: StickyNote, label: 'Notas' },
   { id: 'estadisticas', icon: BarChart3, label: 'Estadísticas' },
 ] as const
 
@@ -140,6 +141,11 @@ export default function PerfilEntrenado() {
   const [isCargandoPendientes, setIsCargandoPendientes] = useState(false)
   const [errorPendientes, setErrorPendientes] = useState('')
 
+  const [notas, setNotas] = useState('')
+  const [isGuardandoNotas, setIsGuardandoNotas] = useState(false)
+  const [errorNotas, setErrorNotas] = useState('')
+  const [mensajeNotas, setMensajeNotas] = useState('')
+
   const cargarRealizados = useCallback(async () => {
     if (!atletaId || tabActivo !== 'realizados') return
     setIsCargandoRealizados(true)
@@ -177,6 +183,14 @@ export default function PerfilEntrenado() {
   useEffect(() => {
     void cargarPendientes()
   }, [cargarPendientes])
+
+  useEffect(() => {
+    if (tabActivo === 'notas' && perfil) {
+      setNotas(perfil.notasEntrenador ?? '')
+      setErrorNotas('')
+      setMensajeNotas('')
+    }
+  }, [tabActivo, perfil])
 
   const cargar = useCallback(async () => {
     if (!atletaId) return
@@ -222,6 +236,23 @@ export default function PerfilEntrenado() {
       setModalError(axiosErr.response?.data?.error ?? 'Error al guardar el perfil')
     } finally {
       setIsEnviando(false)
+    }
+  }
+
+  const handleGuardarNotas = async () => {
+    if (!atletaId) return
+    setErrorNotas('')
+    setMensajeNotas('')
+    setIsGuardandoNotas(true)
+    try {
+      await guardarNotas(atletaId, notas.trim())
+      setMensajeNotas('Notas guardadas')
+      void cargar()
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { error?: string } } }
+      setErrorNotas(axiosErr.response?.data?.error ?? 'Error al guardar las notas')
+    } finally {
+      setIsGuardandoNotas(false)
     }
   }
 
@@ -354,6 +385,40 @@ export default function PerfilEntrenado() {
                   error={errorPendientes}
                   vacio="No hay rutinas pendientes"
                 />
+              )}
+              {tabActivo === 'notas' && (
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <label htmlFor="notas" className="block text-sm font-medium text-gray-700 mb-2">
+                    Notas del entrenador
+                  </label>
+                  <textarea
+                    id="notas"
+                    rows={8}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Observaciones, avances, lesiones, ajustes del plan…"
+                    value={notas}
+                    onChange={(e) => setNotas(e.target.value)}
+                  />
+                  <div className="flex items-center gap-3 mt-4">
+                    <button
+                      onClick={handleGuardarNotas}
+                      disabled={isGuardandoNotas}
+                      className="flex items-center gap-2 bg-gray-900 text-white py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                    >
+                      {isGuardandoNotas ? 'Guardando…' : 'Guardar notas'}
+                    </button>
+                    {errorNotas && (
+                      <span className="flex items-center gap-1.5 text-sm text-red-600">
+                        <AlertCircle className="w-4 h-4 shrink-0" /> {errorNotas}
+                      </span>
+                    )}
+                    {mensajeNotas && (
+                      <span className="flex items-center gap-1.5 text-sm text-green-600">
+                        <Check className="w-4 h-4 shrink-0" /> {mensajeNotas}
+                      </span>
+                    )}
+                  </div>
+                </div>
               )}
               {tabActivo === 'estadisticas' && (
                 <div className="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-400">

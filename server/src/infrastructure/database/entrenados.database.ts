@@ -96,16 +96,17 @@ export const obtenerEntrenado = async (entrenadorId: string, atletaId: string): 
       id: true,
       estado: true,
       aceptadoEn: true,
+      notasEntrenador: true,
       atleta: { select: { id: true, nombre: true, correo: true } },
     },
-  })) as unknown as (VinculacionBasica & { aceptadoEn: Date | null }) | null
+  })) as unknown as (VinculacionBasica & { aceptadoEn: Date | null; notasEntrenador: string | null }) | null
 
   if (!vinculacion) return null
 
   const { pendientesMap, ultimosMap, perfilesMap } = await obtenerAgregados(entrenadorId, [atletaId])
   const base = componerEntrenado(vinculacion, pendientesMap, ultimosMap, perfilesMap)
 
-  return { ...base, vinculadoDesde: vinculacion.aceptadoEn }
+  return { ...base, vinculadoDesde: vinculacion.aceptadoEn, notasEntrenador: vinculacion.notasEntrenador }
 }
 
 export const listarEntrenamientosRealizados = async (
@@ -195,5 +196,17 @@ export const guardarPerfilAtleta = (atletaId: string, data: GuardarPerfilAtletaI
         ...(data.diasPorSemana !== undefined ? { diasPorSemana: data.diasPorSemana } : {}),
         ...(data.descripcion !== undefined ? { descripcion: data.descripcion } : {}),
       },
+    })
+    .then(() => undefined)
+
+export const guardarNotasEntrenador = (
+  entrenadorId: string,
+  atletaId: string,
+  notas: string | null,
+): Promise<void> =>
+  prisma.vinculacion
+    .update({
+      where: { entrenadorId_atletaId: { entrenadorId, atletaId } },
+      data: { notasEntrenador: notas },
     })
     .then(() => undefined)
