@@ -2,9 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
   pull_request:
-    branches: [main]
+    branches: [develop]
+
+env:
+  DATABASE_URL: mysql://tp:tp123@localhost:3306/training_planner_test
+  JWT_SECRET: test-secret
+  JWT_REFRESH_SECRET: test-refresh-secret
 
 jobs:
   ci:
@@ -52,9 +57,14 @@ jobs:
       - name: Typecheck client
         run: pnpm typecheck-fe
 
+      - name: Build server
+        run: pnpm build-be
+
+      - name: Build client
+        run: pnpm build-fe
+
+      - name: Push schema a la DB de tests
+        run: pnpm --prefix server exec prisma db push --skip-generate
+
       - name: Test server
         run: pnpm test
-        env:
-          DATABASE_URL: mysql://tp:tp123@localhost:3306/training_planner_test
-          JWT_SECRET: test-secret
-          JWT_REFRESH_SECRET: test-refresh-secret
