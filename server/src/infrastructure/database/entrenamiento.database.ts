@@ -65,11 +65,13 @@ const seccionEntrenamientoSelect = {
 const entrenamientoSelect = {
   id: true,
   plantillaId: true,
+  nombreRutina: true,
   usuarioId: true,
   asignadoPorId: true,
   fecha: true,
   completado: true,
   completadoEn: true,
+  comentario: true,
   creadoEn: true,
   secciones: { select: seccionEntrenamientoSelect, orderBy: { orden: 'asc' as const } },
 } as const
@@ -128,11 +130,13 @@ const mapearSeccion = (s: SeccionPayload): SeccionEntrenamiento => ({
 const mapearEntrenamiento = (w: EntrenamientoPayload): Entrenamiento => ({
   id: w.id,
   plantillaId: w.plantillaId,
+  nombreRutina: w.nombreRutina,
   usuarioId: w.usuarioId,
   asignadoPorId: w.asignadoPorId,
   fecha: w.fecha,
   completado: w.completado,
   completadoEn: w.completadoEn,
+  comentario: w.comentario,
   creadoEn: w.creadoEn,
   secciones: w.secciones.map(mapearSeccion),
 })
@@ -169,6 +173,7 @@ export const asignarEntrenamiento = async (
   const entrenamiento = await prisma.entrenamiento.create({
     data: {
       plantillaId,
+      nombreRutina: plantilla.nombre,
       usuarioId,
       asignadoPorId,
       fecha,
@@ -206,10 +211,10 @@ export const asignarEntrenamiento = async (
   return mapearEntrenamiento(entrenamiento)
 }
 
-export const completarEntrenamiento = (id: string): Promise<Entrenamiento> =>
+export const completarEntrenamiento = (id: string, comentario?: string): Promise<Entrenamiento> =>
   prisma.entrenamiento.update({
     where: { id },
-    data: { completado: true, completadoEn: new Date() },
+    data: { completado: true, completadoEn: new Date(), ...(comentario !== undefined && { comentario }) },
     select: entrenamientoSelect,
   }).then(mapearEntrenamiento)
 

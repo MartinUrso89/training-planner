@@ -8,6 +8,8 @@ import Register from './views/Register'
 import Dashboard from './views/Dashboard'
 import Ejercicios from './views/Ejercicios'
 import Entrenados from './views/Entrenados'
+import PerfilEntrenado from './views/PerfilEntrenado'
+import RutinaDetalle from './views/RutinaDetalle'
 
 const RutaPublica = ({ children }: { children: ReactNode }): ReactNode => {
   const { isAuthenticated } = useAuth()
@@ -26,7 +28,8 @@ export default function App(): ReactNode {
             <Route path="/" element={<Dashboard />} />
             <Route path="/ejercicios" element={<Ejercicios />} />
             <Route path="/entrenados" element={<Entrenados />} />
-            <Route path="/entrenados/:atletaId" element={<div className="p-8 text-gray-500">Perfil completo (próximamente)</div>} />
+            <Route path="/entrenados/:atletaId" element={<PerfilEntrenado />} />
+            <Route path="/entrenamientos/:id" element={<RutinaDetalle />} />
             <Route path="/calendario" element={<div className="p-8 text-gray-500">Calendario (próximamente)</div>} />
             <Route path="/plantillas" element={<div className="p-8 text-gray-500">Plantillas (próximamente)</div>} />
             <Route path="/asignaciones" element={<div className="p-8 text-gray-500">Asignaciones (próximamente)</div>} />

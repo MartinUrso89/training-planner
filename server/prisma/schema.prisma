@@ -147,6 +147,7 @@ model Entrenamiento {
   id            String               @id @default(uuid())
   plantillaId   String?
   plantilla     PlantillaPlan?       @relation(fields: [plantillaId], references: [id])
+  nombreRutina  String?
   usuarioId     String
   usuario       Usuario              @relation("EntrenamientosAsignados", fields: [usuarioId], references: [id])
   asignadoPorId String
@@ -154,6 +155,7 @@ model Entrenamiento {
   fecha         DateTime
   completado    Boolean              @default(false)
   completadoEn  DateTime?
+  comentario    String?
   creadoEn      DateTime             @default(now())
   secciones     SeccionEntrenamiento[]
 }
@@ -233,6 +235,7 @@ model Vinculacion {
   estado        EstadoVinculacion   @default(Pendiente)
   creadoEn      DateTime            @default(now())
   aceptadoEn    DateTime?
+  notasEntrenador String?
   actualizadoEn DateTime            @updatedAt
   entrenador    Usuario             @relation("VinculacionesComoEntrenador", fields: [entrenadorId], references: [id], onDelete: Cascade)
   atleta        Usuario             @relation("VinculacionesComoAtleta", fields: [atletaId], references: [id], onDelete: Cascade)

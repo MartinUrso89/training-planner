@@ -26,6 +26,10 @@ export interface Entrenado {
   rutinasPendientes: number
 }
 
+export interface PerfilEntrenado extends Entrenado {
+  vinculadoDesde: Date | null
+}
+
 export interface ListarEntrenadosResultado {
   datos: Entrenado[]
   total: number

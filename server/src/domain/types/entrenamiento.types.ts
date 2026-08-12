@@ -3,13 +3,43 @@ import type { Ejercicio } from './ejercicio.types.js'
 export interface Entrenamiento {
   id: string
   plantillaId: string | null
+  nombreRutina: string | null
   usuarioId: string
   asignadoPorId: string
   fecha: Date
   completado: boolean
   completadoEn: Date | null
+  comentario: string | null
   creadoEn: Date
   secciones: SeccionEntrenamiento[]
+}
+
+export interface EntrenamientoRealizado {
+  id: string
+  nombreRutina: string | null
+  fecha: Date
+  completadoEn: Date
+  comentario: string | null
+}
+
+export interface ListarEntrenamientosRealizadosResultado {
+  datos: EntrenamientoRealizado[]
+  total: number
+  pagina: number
+  limite: number
+}
+
+export interface RutinaPendiente {
+  id: string
+  nombreRutina: string | null
+  fecha: Date
+}
+
+export interface ListarRutinasPendientesResultado {
+  datos: RutinaPendiente[]
+  total: number
+  pagina: number
+  limite: number
 }
 
 export interface SeccionEntrenamiento {

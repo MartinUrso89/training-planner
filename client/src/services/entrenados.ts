@@ -21,6 +21,16 @@ export interface Entrenado {
   rutinasPendientes: number
 }
 
+export interface PerfilEntrenado extends Entrenado {
+  vinculadoDesde: string | null
+}
+
+export interface GuardarPerfilInput {
+  objetivoPrincipal?: ObjetivoPrincipal
+  diasPorSemana?: number
+  descripcion?: string
+}
+
 export interface ListarEntrenadosResultado {
   datos: Entrenado[]
   total: number
@@ -48,3 +58,9 @@ export const listarEntrenados = (filtros: FiltrosEntrenados): Promise<ListarEntr
       },
     })
     .then((r) => r.data)
+
+export const obtenerEntrenado = (atletaId: string): Promise<PerfilEntrenado> =>
+  api.get<PerfilEntrenado>(`/entrenados/${atletaId}`).then((r) => r.data)
+
+export const guardarPerfilAtleta = (atletaId: string, datos: GuardarPerfilInput): Promise<{ ok: boolean }> =>
+  api.put(`/entrenados/${atletaId}/perfil`, datos).then((r) => r.data)

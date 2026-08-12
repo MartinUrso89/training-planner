@@ -17,7 +17,7 @@ import {
 const navItems = [
   { label: 'Inicio', icon: LayoutDashboard, to: '/' },
   { label: 'Ejercicios', icon: Dumbbell, to: '/ejercicios' },
-  { label: 'Entrenados', icon: Users, to: '/entrenados' },
+  { label: 'Atletas', icon: Users, to: '/entrenados' },
   { label: 'Calendario', icon: Calendar, to: '#' },
 ]
 

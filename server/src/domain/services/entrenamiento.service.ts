@@ -49,11 +49,16 @@ export const asignarPlantillaAUsuario = async (
   return dbAsignarEntrenamiento(data.plantillaId, data.usuarioId, asignadoPorId, new Date(data.fecha))
 }
 
-export const marcarEntrenamientoCompletado = async (id: string, usuarioId: string): Promise<Entrenamiento> => {
+export const marcarEntrenamientoCompletado = async (
+  id: string,
+  usuarioId: string,
+  comentario?: string,
+): Promise<Entrenamiento> => {
   const entrenamiento = await buscarEntrenamientoPorId(id)
   if (!entrenamiento) throw createHttpError(404, 'Entrenamiento no encontrado')
   if (entrenamiento.usuarioId !== usuarioId) throw createHttpError(403, 'Solo el entrenado puede marcar como completado')
-  return completarEntrenamiento(id)
+  const comentarioLimpio = comentario?.trim()
+  return completarEntrenamiento(id, comentarioLimpio ? comentarioLimpio : undefined)
 }
 
 export const registrarResultadoEjercicio = async (

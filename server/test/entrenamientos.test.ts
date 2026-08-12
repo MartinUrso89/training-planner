@@ -163,6 +163,22 @@ describe('POST /entrenamientos/:id/completar', () => {
     expect(res.body.completadoEn).toBeTruthy()
   })
 
+  it('guarda el comentario del atleta al completar', async () => {
+    const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    const entrenamiento = await construirEntrenamiento(trainer, athlete)
+
+    const res = await request(app)
+      .post(`/entrenamientos/${entrenamiento.id}/completar`)
+      .set(autenticar(athlete))
+      .send({ comentario: 'Muy buena sesión, termina fuerte.' })
+    expect(res.status).toBe(200)
+    expect(res.body.comentario).toBe('Muy buena sesión, termina fuerte.')
+
+    const detalle = await request(app).get(`/entrenamientos/${entrenamiento.id}`).set(autenticar(trainer))
+    expect(detalle.body.comentario).toBe('Muy buena sesión, termina fuerte.')
+  })
+
   it('devuelve 403 si no es el entrenado', async () => {
     const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
     const athlete = await registrarUsuario('Athlete', 'athlete@test.com')

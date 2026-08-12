@@ -41,7 +41,7 @@ router.post('/asignar', async (req, res, next) => {
 
 router.post('/:id/completar', async (req, res, next) => {
   try {
-    const entrenamiento = await marcarEntrenamientoCompletado(req.params.id, req.userId!)
+    const entrenamiento = await marcarEntrenamientoCompletado(req.params.id, req.userId!, req.body?.comentario)
     res.json(entrenamiento)
   } catch (err) {
     next(err)

@@ -1,9 +1,10 @@
 import { createHttpError } from '../../lib/errors.js'
 import { buscarUsuarioPorId } from '../../infrastructure/database/usuario.database.js'
 import { existeVinculacionActiva } from '../../infrastructure/database/vinculacion.database.js'
-import { listarEntrenados as dbListarEntrenados, guardarPerfilAtleta as dbGuardarPerfilAtleta } from '../../infrastructure/database/entrenados.database.js'
+import { listarEntrenados as dbListarEntrenados, obtenerEntrenado as dbObtenerEntrenado, guardarPerfilAtleta as dbGuardarPerfilAtleta, listarEntrenamientosRealizados as dbListarEntrenamientosRealizados, listarRutinasPendientes as dbListarRutinasPendientes } from '../../infrastructure/database/entrenados.database.js'
 import { OBJETIVOS_PRINCIPALES } from '../types/perfilAtleta.types.js'
-import type { FiltrosEntrenados, GuardarPerfilAtletaInput, ListarEntrenadosResultado } from '../types/perfilAtleta.types.js'
+import type { FiltrosEntrenados, GuardarPerfilAtletaInput, ListarEntrenadosResultado, PerfilEntrenado } from '../types/perfilAtleta.types.js'
+import type { ListarEntrenamientosRealizadosResultado, ListarRutinasPendientesResultado } from '../types/entrenamiento.types.js'
 
 const validarEntrenador = async (entrenadorId: string): Promise<void> => {
   const usuario = await buscarUsuarioPorId(entrenadorId)
@@ -21,6 +22,41 @@ export const obtenerEntrenados = async (
   }
 
   return dbListarEntrenados(entrenadorId, filtros)
+}
+
+export const obtenerEntrenado = async (entrenadorId: string, atletaId: string): Promise<PerfilEntrenado> => {
+  await validarEntrenador(entrenadorId)
+
+  const perfil = await dbObtenerEntrenado(entrenadorId, atletaId)
+  if (!perfil) throw createHttpError(404, 'El atleta no está vinculado')
+
+  return perfil
+}
+
+export const obtenerEntrenamientosRealizados = async (
+  entrenadorId: string,
+  atletaId: string,
+  filtros: { pagina?: number; limite?: number },
+): Promise<ListarEntrenamientosRealizadosResultado> => {
+  await validarEntrenador(entrenadorId)
+
+  const perfil = await dbObtenerEntrenado(entrenadorId, atletaId)
+  if (!perfil) throw createHttpError(404, 'El atleta no está vinculado')
+
+  return dbListarEntrenamientosRealizados(entrenadorId, atletaId, filtros)
+}
+
+export const obtenerRutinasPendientes = async (
+  entrenadorId: string,
+  atletaId: string,
+  filtros: { pagina?: number; limite?: number },
+): Promise<ListarRutinasPendientesResultado> => {
+  await validarEntrenador(entrenadorId)
+
+  const perfil = await dbObtenerEntrenado(entrenadorId, atletaId)
+  if (!perfil) throw createHttpError(404, 'El atleta no está vinculado')
+
+  return dbListarRutinasPendientes(entrenadorId, atletaId, filtros)
 }
 
 export const actualizarPerfilAtleta = async (

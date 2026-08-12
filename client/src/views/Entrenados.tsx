@@ -53,7 +53,7 @@ export default function Entrenados() {
       setDatos(res.datos)
       setTotal(res.total)
     } catch {
-      setError('Error al cargar los entrenados')
+      setError('Error al cargar el listado de atletas. Por favor, intentá nuevamente.')
     } finally {
       setIsCargando(false)
     }
@@ -97,13 +97,13 @@ export default function Entrenados() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Entrenados</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Listado de atletas</h1>
         <button
           onClick={abrirModal}
           className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
         >
           <UserPlus className="w-4 h-4" />
-          Agregar entrenando
+          Agregar atleta
         </button>
       </div>
 
@@ -232,7 +232,7 @@ export default function Entrenados() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
           <div className="w-full max-w-sm bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-1">
-              <h2 className="text-lg font-bold text-gray-900">Agregar entrenando</h2>
+              <h2 className="text-lg font-bold text-gray-900">Agregar atleta</h2>
               <button
                 onClick={() => setModalAbierto(false)}
                 className="text-gray-400 hover:text-gray-600"

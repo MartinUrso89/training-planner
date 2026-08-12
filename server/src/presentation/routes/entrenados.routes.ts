@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { jwtCheck } from '../middleware/auth.middleware.js'
-import { obtenerEntrenados, actualizarPerfilAtleta } from '../../domain/services/entrenados.service.js'
+import { obtenerEntrenados, obtenerEntrenado, obtenerEntrenamientosRealizados, obtenerRutinasPendientes, actualizarPerfilAtleta } from '../../domain/services/entrenados.service.js'
 
 const router = Router()
 router.use(jwtCheck)
@@ -16,6 +16,39 @@ router.get('/', async (req, res, next) => {
       limite: req.query.limite ? Number(req.query.limite) : undefined,
     })
     res.json(resultado)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/:atletaId/entrenamientos', async (req, res, next) => {
+  try {
+    const resultado = await obtenerEntrenamientosRealizados(req.userId!, req.params.atletaId, {
+      pagina: req.query.pagina ? Number(req.query.pagina) : undefined,
+      limite: req.query.limite ? Number(req.query.limite) : undefined,
+    })
+    res.json(resultado)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/:atletaId/rutinas-pendientes', async (req, res, next) => {
+  try {
+    const resultado = await obtenerRutinasPendientes(req.userId!, req.params.atletaId, {
+      pagina: req.query.pagina ? Number(req.query.pagina) : undefined,
+      limite: req.query.limite ? Number(req.query.limite) : undefined,
+    })
+    res.json(resultado)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/:atletaId', async (req, res, next) => {
+  try {
+    const perfil = await obtenerEntrenado(req.userId!, req.params.atletaId)
+    res.json(perfil)
   } catch (err) {
     next(err)
   }

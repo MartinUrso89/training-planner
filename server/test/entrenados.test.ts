@@ -163,3 +163,205 @@ describe('PUT /entrenados/:atletaId/perfil', () => {
     expect(res.status).toBe(403)
   })
 })
+
+describe('GET /entrenados/:atletaId', () => {
+  it('devuelve el perfil completo con vinculado desde, objetivo, días y descripción', async () => {
+    const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(trainer, athlete)
+    await request(app)
+      .put(`/entrenados/${athlete.userId}/perfil`)
+      .set(autenticar(trainer))
+      .send({ objetivoPrincipal: 'Hipertrofia', diasPorSemana: 4, descripcion: 'Ganar masa muscular' })
+
+    const res = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(trainer))
+    expect(res.status).toBe(200)
+    expect(res.body.estado).toBe('Activo')
+    expect(res.body.vinculadoDesde).toBeTruthy()
+    expect(res.body.objetivoPrincipal).toBe('Hipertrofia')
+    expect(res.body.diasPorSemana).toBe(4)
+    expect(res.body.descripcion).toBe('Ganar masa muscular')
+    expect(res.body.rutinasPendientes).toBe(0)
+    expect(res.body.ultimoEntrenamiento).toBeNull()
+  })
+
+  it('actualiza rutinas pendientes y último entrenamiento', async () => {
+    const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(trainer, athlete)
+    const entrenamiento = await asignarRutina(trainer, athlete)
+
+    const pendiente = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(trainer))
+    expect(pendiente.body.rutinasPendientes).toBe(1)
+    expect(pendiente.body.ultimoEntrenamiento).toBeNull()
+
+    await request(app).post(`/entrenamientos/${entrenamiento.id}/completar`).set(autenticar(athlete))
+    const completado = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(trainer))
+    expect(completado.body.rutinasPendientes).toBe(0)
+    expect(completado.body.ultimoEntrenamiento).toBeTruthy()
+  })
+
+  it('devuelve 404 si el atleta no está vinculado a ese entrenador', async () => {
+    const t1 = await registrarUsuario('T1', 't1@test.com', 'ENTRENADOR')
+    const t2 = await registrarUsuario('T2', 't2@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(t1, athlete)
+
+    const res = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(t2))
+    expect(res.status).toBe(404)
+  })
+
+  it('devuelve 403 si quien consulta no es entrenador', async () => {
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    const res = await request(app).get(`/entrenados/${athlete.userId}`).set(autenticar(athlete))
+    expect(res.status).toBe(403)
+  })
+})
+
+describe('GET /entrenados/:atletaId/entrenamientos', () => {
+  it('lista rutinas completadas con fecha, nombre y comentario, del más reciente al más lejano', async () => {
+    const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(trainer, athlete)
+
+    const p1 = await request(app).post('/plantillas-plan').set(autenticar(trainer)).send({ nombre: 'Fuerza' })
+    const p2 = await request(app).post('/plantillas-plan').set(autenticar(trainer)).send({ nombre: 'Resistencia' })
+    const e1 = await request(app)
+      .post('/entrenamientos/asignar')
+      .set(autenticar(trainer))
+      .send({ plantillaId: p1.body.id, usuarioId: athlete.userId, fecha: '2026-08-04' })
+    const e2 = await request(app)
+      .post('/entrenamientos/asignar')
+      .set(autenticar(trainer))
+      .send({ plantillaId: p2.body.id, usuarioId: athlete.userId, fecha: '2026-08-06' })
+
+    await request(app)
+      .post(`/entrenamientos/${e1.body.id}/completar`)
+      .set(autenticar(athlete))
+      .send({ comentario: 'Muy buena sesión.' })
+    await request(app).post(`/entrenamientos/${e2.body.id}/completar`).set(autenticar(athlete))
+
+    const res = await request(app).get(`/entrenados/${athlete.userId}/entrenamientos`).set(autenticar(trainer))
+    expect(res.status).toBe(200)
+    expect(res.body.total).toBe(2)
+    expect(res.body.limite).toBe(15)
+    expect(res.body.datos).toHaveLength(2)
+    expect(res.body.datos[0].completadoEn > res.body.datos[1].completadoEn).toBe(true)
+    const conComentario = res.body.datos.find((d: { id: string }) => d.id === e1.body.id)
+    expect(conComentario.nombreRutina).toBe('Fuerza')
+    expect(conComentario.comentario).toBe('Muy buena sesión.')
+    const sinComentario = res.body.datos.find((d: { id: string }) => d.id === e2.body.id)
+    expect(sinComentario.nombreRutina).toBe('Resistencia')
+    expect(sinComentario.comentario).toBeNull()
+  })
+
+  it('solo incluye rutinas completadas asignadas por mí', async () => {
+    const t1 = await registrarUsuario('T1', 't1@test.com', 'ENTRENADOR')
+    const t2 = await registrarUsuario('T2', 't2@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(t1, athlete)
+    await vincular(t2, athlete)
+
+    await asignarRutina(t1, athlete)
+    const deOtro = await asignarRutina(t2, athlete)
+    await request(app).post(`/entrenamientos/${deOtro.id}/completar`).set(autenticar(athlete))
+
+    const res = await request(app).get(`/entrenados/${athlete.userId}/entrenamientos`).set(autenticar(t1))
+    expect(res.status).toBe(200)
+    expect(res.body.total).toBe(0)
+
+    const delOtro = await request(app).get(`/entrenados/${athlete.userId}/entrenamientos`).set(autenticar(t2))
+    expect(delOtro.body.total).toBe(1)
+  })
+
+  it('pagina de a 15 rutinas', async () => {
+    const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(trainer, athlete)
+
+    const plantillas = []
+    for (let i = 0; i < 16; i++) {
+      const p = await request(app).post('/plantillas-plan').set(autenticar(trainer)).send({ nombre: `Plan ${i}` })
+      const e = await request(app)
+        .post('/entrenamientos/asignar')
+        .set(autenticar(trainer))
+        .send({ plantillaId: p.body.id, usuarioId: athlete.userId, fecha: `2026-08-${String((i % 28) + 1).padStart(2, '0')}` })
+      await request(app).post(`/entrenamientos/${e.body.id}/completar`).set(autenticar(athlete))
+      plantillas.push(p.body)
+    }
+
+    const p1 = await request(app).get(`/entrenados/${athlete.userId}/entrenamientos?pagina=1`).set(autenticar(trainer))
+    expect(p1.body.datos).toHaveLength(15)
+    expect(p1.body.total).toBe(16)
+    expect(p1.body.pagina).toBe(1)
+
+    const p2 = await request(app).get(`/entrenados/${athlete.userId}/entrenamientos?pagina=2`).set(autenticar(trainer))
+    expect(p2.body.datos).toHaveLength(1)
+  })
+
+  it('devuelve 404 si el atleta no está vinculado a ese entrenador', async () => {
+    const t1 = await registrarUsuario('T1', 't1@test.com', 'ENTRENADOR')
+    const t2 = await registrarUsuario('T2', 't2@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(t1, athlete)
+
+    const res = await request(app).get(`/entrenados/${athlete.userId}/entrenamientos`).set(autenticar(t2))
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('GET /entrenados/:atletaId/rutinas-pendientes', () => {
+  it('lista rutinas sin completar asignadas por mí, de la más próxima a la más lejana', async () => {
+    const trainer = await registrarUsuario('Trainer', 'trainer@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(trainer, athlete)
+
+    const p1 = await request(app).post('/plantillas-plan').set(autenticar(trainer)).send({ nombre: 'Empuje' })
+    const p2 = await request(app).post('/plantillas-plan').set(autenticar(trainer)).send({ nombre: 'Tirón' })
+    await request(app)
+      .post('/entrenamientos/asignar')
+      .set(autenticar(trainer))
+      .send({ plantillaId: p1.body.id, usuarioId: athlete.userId, fecha: '2026-08-06' })
+    await request(app)
+      .post('/entrenamientos/asignar')
+      .set(autenticar(trainer))
+      .send({ plantillaId: p2.body.id, usuarioId: athlete.userId, fecha: '2026-08-04' })
+    const completado = await request(app)
+      .post('/entrenamientos/asignar')
+      .set(autenticar(trainer))
+      .send({ plantillaId: p1.body.id, usuarioId: athlete.userId, fecha: '2026-08-02' })
+    await request(app).post(`/entrenamientos/${completado.body.id}/completar`).set(autenticar(athlete))
+
+    const res = await request(app).get(`/entrenados/${athlete.userId}/rutinas-pendientes`).set(autenticar(trainer))
+    expect(res.status).toBe(200)
+    expect(res.body.total).toBe(2)
+    expect(res.body.limite).toBe(15)
+    expect(res.body.datos).toHaveLength(2)
+    expect(res.body.datos[0].nombreRutina).toBe('Tirón')
+    expect(res.body.datos[0].fecha).toBe('2026-08-04T00:00:00.000Z')
+    expect(res.body.datos[1].nombreRutina).toBe('Empuje')
+  })
+
+  it('no cuenta las pendientes asignadas por otro entrenador', async () => {
+    const t1 = await registrarUsuario('T1', 't1@test.com', 'ENTRENADOR')
+    const t2 = await registrarUsuario('T2', 't2@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(t1, athlete)
+    await vincular(t2, athlete)
+
+    await asignarRutina(t2, athlete)
+
+    const res = await request(app).get(`/entrenados/${athlete.userId}/rutinas-pendientes`).set(autenticar(t1))
+    expect(res.body.total).toBe(0)
+  })
+
+  it('devuelve 404 si el atleta no está vinculado a ese entrenador', async () => {
+    const t1 = await registrarUsuario('T1', 't1@test.com', 'ENTRENADOR')
+    const t2 = await registrarUsuario('T2', 't2@test.com', 'ENTRENADOR')
+    const athlete = await registrarUsuario('Athlete', 'athlete@test.com')
+    await vincular(t1, athlete)
+
+    const res = await request(app).get(`/entrenados/${athlete.userId}/rutinas-pendientes`).set(autenticar(t2))
+    expect(res.status).toBe(404)
+  })
+})
