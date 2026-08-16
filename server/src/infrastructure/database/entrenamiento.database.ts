@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
 import prisma from '../../lib/prisma.js'
-import type { Entrenamiento, SeccionEntrenamiento, EjercicioEntrenamiento, RegistroEjercicio } from '../../domain/types/entrenamiento.types.js'
+import type { Entrenamiento, SeccionEntrenamiento, EjercicioEntrenamiento, RegistroEjercicio, EntrenamientoResumen, ListarMisEntrenamientosResultado, FiltrosMisEntrenamientos } from '../../domain/types/entrenamiento.types.js'
 
 const logSelect = {
   id: true,
@@ -148,6 +148,115 @@ export const listarEntrenamientosPorUsuario = (usuarioId: string): Promise<Entre
     orderBy: { fecha: 'desc' },
   }).then((ws) => ws.map(mapearEntrenamiento))
 
+const resumenSelect = {
+  id: true,
+  nombreRutina: true,
+  plantilla: { select: { nombre: true } },
+  fecha: true,
+  completado: true,
+  completadoEn: true,
+  comentario: true,
+  asignadoPor: { select: { id: true, nombre: true } },
+} as const
+
+type ResumenPayload = Prisma.EntrenamientoGetPayload<{ select: typeof resumenSelect }>
+
+const mapearResumen = (w: ResumenPayload): EntrenamientoResumen => ({
+  id: w.id,
+  nombreRutina: w.nombreRutina ?? w.plantilla?.nombre ?? null,
+  fecha: w.fecha,
+  completado: w.completado,
+  completadoEn: w.completadoEn,
+  comentario: w.comentario,
+  asignadoPor: w.asignadoPor,
+})
+
+export const listarMisEntrenamientos = async (
+  usuarioId: string,
+  filtros: FiltrosMisEntrenamientos,
+): Promise<ListarMisEntrenamientosResultado> => {
+  const pagina = Math.max(1, filtros.pagina ?? 1)
+  const limite = Math.min(50, Math.max(1, filtros.limite ?? 15))
+
+  const rangoFechas = filtros.desde || filtros.hasta
+    ? {
+        ...(filtros.desde && { gte: filtros.desde }),
+        ...(filtros.hasta && { lte: filtros.hasta }),
+      }
+    : undefined
+
+  const where: Prisma.EntrenamientoWhereInput = {
+    usuarioId,
+    ...(filtros.completado !== undefined && { completado: filtros.completado }),
+    ...(rangoFechas && { fecha: rangoFechas }),
+  }
+
+  const [total, entrenamientos] = await Promise.all([
+    prisma.entrenamiento.count({ where }),
+    prisma.entrenamiento.findMany({
+      where,
+      select: resumenSelect,
+      orderBy: { fecha: filtros.completado === false ? 'asc' : 'desc' },
+      skip: (pagina - 1) * limite,
+      take: limite,
+    }),
+  ])
+
+  return {
+    datos: entrenamientos.map(mapearResumen),
+    total,
+    pagina,
+    limite,
+  }
+}
+
+export const buscarEjercicioEntrenamientoConEntrenamiento = (
+  ejercicioEntrenamientoId: string,
+): Promise<{ id: string; entrenamientoId: string; entrenamiento: { usuarioId: string; completado: boolean } } | null> =>
+  prisma.ejercicioEntrenamiento.findUnique({
+    where: { id: ejercicioEntrenamientoId },
+    select: {
+      id: true,
+      seccion: {
+        select: {
+          entrenamiento: { select: { id: true, usuarioId: true, completado: true } },
+        },
+      },
+    },
+  }).then((e) =>
+    e
+      ? {
+          id: e.id,
+          entrenamientoId: e.seccion.entrenamiento.id,
+          entrenamiento: e.seccion.entrenamiento,
+        }
+      : null,
+  )
+
+export const buscarRegistroEjercicioConEntrenamiento = (
+  logId: string,
+): Promise<{ id: string; ejercicioEntrenamientoId: string; entrenamiento: { usuarioId: string; completado: boolean } } | null> =>
+  prisma.registroEjercicio.findUnique({
+    where: { id: logId },
+    select: {
+      id: true,
+      ejercicioEntrenamientoId: true,
+      ejercicio: {
+        select: {
+          seccion: {
+            select: {
+              entrenamiento: { select: { usuarioId: true, completado: true } },
+            },
+          },
+        },
+      },
+    },
+  }).then((l) =>
+    l
+      ? { id: l.id, ejercicioEntrenamientoId: l.ejercicioEntrenamientoId, entrenamiento: l.ejercicio.seccion.entrenamiento }
+      : null,
+  )
+
 export const buscarEntrenamientoPorId = (id: string): Promise<Entrenamiento | null> =>
   prisma.entrenamiento.findUnique({ where: { id }, select: entrenamientoSelect })
     .then((w) => w ? mapearEntrenamiento(w) : null)
@@ -222,11 +331,11 @@ export const crearRegistroEjercicio = (
   ejercicioEntrenamientoId: string,
   data: {
     completado?: boolean
-    repeticionesReales?: number
-    pesoReal?: number
-    rpeReal?: number
-    duracionReal?: number
-    comentario?: string
+    repeticionesReales?: number | null
+    pesoReal?: number | null
+    rpeReal?: number | null
+    duracionReal?: number | null
+    comentario?: string | null
   },
 ): Promise<RegistroEjercicio> =>
   prisma.registroEjercicio.create({
@@ -247,11 +356,11 @@ export const actualizarRegistroEjercicio = (
   id: string,
   data: {
     completado?: boolean
-    repeticionesReales?: number
-    pesoReal?: number
-    rpeReal?: number
-    duracionReal?: number
-    comentario?: string
+    repeticionesReales?: number | null
+    pesoReal?: number | null
+    rpeReal?: number | null
+    duracionReal?: number | null
+    comentario?: string | null
   },
 ): Promise<RegistroEjercicio> =>
   prisma.registroEjercicio.update({

@@ -71,13 +71,20 @@ Estado: ✅ hecho · 🔶 en curso · ⏳ próximo · 💭 idea
 - Backend Rutinas pendientes: `GET /entrenados/:atletaId/rutinas-pendientes` (orden fecha asc, límite 15).
 - Tab Rutinas pendientes (N) en PerfilEntrenado (frontend completo).
 - Tab Notas del entrenador: textarea grande + guardar inline. Backend: `Vinculacion.notasEntrenador` (privadas por par), `PUT /entrenados/:atletaId/notas`, máx 2000 chars, 403 si no hay vinculación activa. Schema ya migrado (dev + test).
+- CI en GitHub Actions: corre lint, typecheck, build (server+client) y tests en push a `develop` y PRs hacia `develop`. Usa MySQL 8 como servicio, setea `DATABASE_URL`/secrets a nivel de job y hace `prisma db push --skip-generate` antes de los tests.
+- Fix build server: `tsconfig.build.json` sin `declaration: true` (TS2742 con Express 5 + pnpm).
+- Experiencia del atleta: sidebar/dashboard propios por rol (`ATLETA` vs `ENTRENADOR`), rutas protegidas con `RutaRol`.
+- Backend atleta: `GET /entrenamientos/mios` (listado liviano paginado con filtros `completado`, `desde`/`hasta` para calendario). Logs de ejercicios ahora validan ownership (403) y que la rutina no esté completada (409); `POST /entrenamientos/:id/completar` devuelve 409 si ya está completada.
+- Vistas atleta: `Mis rutinas` (pendientes), `Histórico` (realizadas), `Estadísticas` (placeholder).
+- Dashboard atleta (única vista de inicio): tarjetas de secciones → banner azul "Próximo entrenamiento" full-width con "Comenzar próximo entrenamiento asignado" → calendario mensual embebido (`CalendarioMensual`, verde=completada/ámbar=pendiente). No hay ruta `/calendario` ni solapa en el sidebar (se eliminaron al embeberse).
+- `RutinaDetalle` editable para el atleta: carga de resultados por serie (reps, peso, RPE, duración, comentario, ✓) con PUT en blur, "Agregar serie", y botón "Completar rutina" con comentario general. Para entrenador sigue en solo lectura.
 
 ### 🔶 En curso
 - (nada pendiente por ahora)
 
 ### ⏳ Próximo
-- Completar rutina desde la UI del atleta (el endpoint `POST /entrenamientos/:id/completar` ya existe).
 - Estadísticas (contenido a definir: frecuencia, volumen por músculo, progreso de fuerza, plan vs real).
+- Pendientes menores detectadas: no hay endpoint para `SeccionEntrenamiento.rondasCompletadas`/`tiempoTotalReal` (se pueden dejar fuera por ahora); no hay borrado de series/registros.
 
 ### 💭 Ideas
 - Notificaciones/recordatorios de rutinas.

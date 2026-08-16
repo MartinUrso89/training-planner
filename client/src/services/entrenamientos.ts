@@ -91,6 +91,76 @@ export const obtenerEntrenamientosRealizados = (
 export const obtenerEntrenamiento = (id: string): Promise<EntrenamientoDetalle> =>
   api.get<EntrenamientoDetalle>(`/entrenamientos/${id}`).then((r) => r.data)
 
+export interface MisEntrenamiento {
+  id: string
+  nombreRutina: string | null
+  fecha: string
+  completado: boolean
+  completadoEn: string | null
+  comentario: string | null
+  asignadoPor: { id: string; nombre: string } | null
+}
+
+export interface ListarMisEntrenamientosResultado {
+  datos: MisEntrenamiento[]
+  total: number
+  pagina: number
+  limite: number
+}
+
+export interface FiltrosMisEntrenamientos {
+  completado?: boolean
+  desde?: string
+  hasta?: string
+  pagina: number
+  limite?: number
+}
+
+export const obtenerMisEntrenamientos = (
+  filtros: FiltrosMisEntrenamientos,
+): Promise<ListarMisEntrenamientosResultado> =>
+  api
+    .get<ListarMisEntrenamientosResultado>('/entrenamientos/mios', {
+      params: {
+        completado: filtros.completado === undefined ? undefined : String(filtros.completado),
+        desde: filtros.desde,
+        hasta: filtros.hasta,
+        pagina: filtros.pagina,
+        limite: filtros.limite ?? 15,
+      },
+    })
+    .then((r) => r.data)
+
+export const completarEntrenamiento = (id: string, comentario?: string): Promise<EntrenamientoDetalle> =>
+  api
+    .post<EntrenamientoDetalle>(`/entrenamientos/${id}/completar`, comentario ? { comentario } : {})
+    .then((r) => r.data)
+
+export interface RegistrarResultadoInput {
+  completado?: boolean
+  repeticionesReales?: number | null
+  pesoReal?: number | null
+  rpeReal?: number | null
+  duracionReal?: number | null
+  comentario?: string | null
+}
+
+export const registrarResultadoEjercicio = (
+  ejercicioEntrenamientoId: string,
+  datos: RegistrarResultadoInput,
+): Promise<RegistroEjercicio> =>
+  api
+    .post<RegistroEjercicio>(`/entrenamientos/ejercicios/${ejercicioEntrenamientoId}/log`, datos)
+    .then((r) => r.data)
+
+export const actualizarResultadoEjercicio = (
+  logId: string,
+  datos: RegistrarResultadoInput,
+): Promise<RegistroEjercicio> =>
+  api
+    .put<RegistroEjercicio>(`/entrenamientos/logs/${logId}`, datos)
+    .then((r) => r.data)
+
 export const obtenerRutinasPendientes = (
   atletaId: string,
   filtros: { pagina: number; limite?: number },
