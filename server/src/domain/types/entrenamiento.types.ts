@@ -42,6 +42,31 @@ export interface ListarRutinasPendientesResultado {
   limite: number
 }
 
+export interface EntrenamientoResumen {
+  id: string
+  nombreRutina: string | null
+  fecha: Date
+  completado: boolean
+  completadoEn: Date | null
+  comentario: string | null
+  asignadoPor: { id: string; nombre: string } | null
+}
+
+export interface ListarMisEntrenamientosResultado {
+  datos: EntrenamientoResumen[]
+  total: number
+  pagina: number
+  limite: number
+}
+
+export interface FiltrosMisEntrenamientos {
+  completado?: boolean
+  desde?: Date
+  hasta?: Date
+  pagina?: number
+  limite?: number
+}
+
 export interface SeccionEntrenamiento {
   id: string
   entrenamientoId: string

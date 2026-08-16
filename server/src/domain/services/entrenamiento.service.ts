@@ -1,7 +1,10 @@
 import { createHttpError } from '../../lib/errors.js'
 import {
   listarEntrenamientosPorUsuario,
+  listarMisEntrenamientos,
   buscarEntrenamientoPorId,
+  buscarEjercicioEntrenamientoConEntrenamiento,
+  buscarRegistroEjercicioConEntrenamiento,
   asignarEntrenamiento as dbAsignarEntrenamiento,
   completarEntrenamiento,
   crearRegistroEjercicio,
@@ -10,11 +13,21 @@ import {
 import { buscarPlantillaPorId } from '../../infrastructure/database/plantillaPlan.database.js'
 import { buscarUsuarioPorId } from '../../infrastructure/database/usuario.database.js'
 import { existeVinculacionActiva } from '../../infrastructure/database/vinculacion.database.js'
-import type { Entrenamiento, RegistroEjercicio } from '../types/entrenamiento.types.js'
+import type { Entrenamiento, RegistroEjercicio, FiltrosMisEntrenamientos, ListarMisEntrenamientosResultado } from '../types/entrenamiento.types.js'
 import type { AsignarEntrenamientoInput } from '../types/entrenamiento.types.js'
 
 export const obtenerEntrenamientosPorUsuario = (usuarioId: string): Promise<Entrenamiento[]> =>
   listarEntrenamientosPorUsuario(usuarioId)
+
+export const obtenerMisEntrenamientos = async (
+  usuarioId: string,
+  filtros: FiltrosMisEntrenamientos,
+): Promise<ListarMisEntrenamientosResultado> => {
+  if (filtros.desde && filtros.hasta && filtros.desde > filtros.hasta) {
+    throw createHttpError(400, 'La fecha desde no puede ser posterior a la fecha hasta')
+  }
+  return listarMisEntrenamientos(usuarioId, filtros)
+}
 
 export const obtenerEntrenamientoPorId = async (id: string, usuarioId: string, esAdmin: boolean): Promise<Entrenamiento> => {
   const entrenamiento = await buscarEntrenamientoPorId(id)
@@ -57,34 +70,51 @@ export const marcarEntrenamientoCompletado = async (
   const entrenamiento = await buscarEntrenamientoPorId(id)
   if (!entrenamiento) throw createHttpError(404, 'Entrenamiento no encontrado')
   if (entrenamiento.usuarioId !== usuarioId) throw createHttpError(403, 'Solo el entrenado puede marcar como completado')
+  if (entrenamiento.completado) throw createHttpError(409, 'El entrenamiento ya está completado')
   const comentarioLimpio = comentario?.trim()
   return completarEntrenamiento(id, comentarioLimpio ? comentarioLimpio : undefined)
 }
 
+const validarAccesoARegistro = async (
+  entrenamiento: { usuarioId: string; completado: boolean },
+  usuarioId: string,
+): Promise<void> => {
+  if (entrenamiento.usuarioId !== usuarioId) throw createHttpError(403, 'No podés registrar resultados en un entrenamiento ajeno')
+  if (entrenamiento.completado) throw createHttpError(409, 'No podés modificar resultados de un entrenamiento ya completado')
+}
+
 export const registrarResultadoEjercicio = async (
   ejercicioEntrenamientoId: string,
-  _usuarioId: string,
+  usuarioId: string,
   data: {
     completado?: boolean
-    repeticionesReales?: number
-    pesoReal?: number
-    rpeReal?: number
-    duracionReal?: number
-    comentario?: string
+    repeticionesReales?: number | null
+    pesoReal?: number | null
+    rpeReal?: number | null
+    duracionReal?: number | null
+    comentario?: string | null
   },
-): Promise<RegistroEjercicio> =>
-  crearRegistroEjercicio(ejercicioEntrenamientoId, data)
+): Promise<RegistroEjercicio> => {
+  const ejercicio = await buscarEjercicioEntrenamientoConEntrenamiento(ejercicioEntrenamientoId)
+  if (!ejercicio) throw createHttpError(404, 'Ejercicio no encontrado')
+  await validarAccesoARegistro(ejercicio.entrenamiento, usuarioId)
+  return crearRegistroEjercicio(ejercicioEntrenamientoId, data)
+}
 
 export const actualizarResultadoEjercicio = async (
   logId: string,
-  _usuarioId: string,
+  usuarioId: string,
   data: {
     completado?: boolean
-    repeticionesReales?: number
-    pesoReal?: number
-    rpeReal?: number
-    duracionReal?: number
-    comentario?: string
+    repeticionesReales?: number | null
+    pesoReal?: number | null
+    rpeReal?: number | null
+    duracionReal?: number | null
+    comentario?: string | null
   },
-): Promise<RegistroEjercicio> =>
-  actualizarRegistroEjercicio(logId, data)
+): Promise<RegistroEjercicio> => {
+  const log = await buscarRegistroEjercicioConEntrenamiento(logId)
+  if (!log) throw createHttpError(404, 'Registro no encontrado')
+  await validarAccesoARegistro(log.entrenamiento, usuarioId)
+  return actualizarRegistroEjercicio(logId, data)
+}

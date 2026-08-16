@@ -3,6 +3,7 @@ import { jwtCheck } from '../middleware/auth.middleware.js'
 import {
   obtenerEntrenamientosPorUsuario,
   obtenerEntrenamientoPorId,
+  obtenerMisEntrenamientos,
   asignarPlantillaAUsuario,
   marcarEntrenamientoCompletado,
   registrarResultadoEjercicio,
@@ -16,6 +17,26 @@ router.get('/', async (req, res, next) => {
   try {
     const entrenamientos = await obtenerEntrenamientosPorUsuario(req.userId!)
     res.json(entrenamientos)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get('/mios', async (req, res, next) => {
+  try {
+    const parsearFecha = (v: unknown): Date | undefined => {
+      if (typeof v !== 'string' || !v) return undefined
+      const fecha = new Date(v)
+      return Number.isNaN(fecha.getTime()) ? undefined : fecha
+    }
+    const resultado = await obtenerMisEntrenamientos(req.userId!, {
+      completado: req.query.completado === 'true' ? true : req.query.completado === 'false' ? false : undefined,
+      desde: parsearFecha(req.query.desde),
+      hasta: parsearFecha(req.query.hasta),
+      pagina: req.query.pagina ? Number(req.query.pagina) : undefined,
+      limite: req.query.limite ? Number(req.query.limite) : undefined,
+    })
+    res.json(resultado)
   } catch (err) {
     next(err)
   }
